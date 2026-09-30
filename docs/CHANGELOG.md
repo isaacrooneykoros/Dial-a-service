@@ -13,6 +13,7 @@ All notable changes, grouped by milestone. Updated at the end of each milestone.
 - Backend skeleton (T01b): Python 3.12, Django 5.2.17 LTS, settings split into base, local, test and production (driven by django-environ, refusing SQLite and unsafe production values), pinned requirements, ruff, mypy and pytest configuration, `.env.example`, and the twelve empty apps.
 
 - Database roles (T02a): `dial_owner`, `dial_app` (NOBYPASSRLS) and `dial_platform` (BYPASSRLS) with per-database grants, a setup and verification script, migration scripts that run only as the owner, and `docs/ops/neon-dev.md`. Verified on the Neon `dev` branch.
+- Test database harness (T02b): pytest creates and migrates the test database as `dial_owner`, applies the grants, then runs every test as `dial_app` over Neon's direct host. Tests prove the test role can't bypass RLS or create tables.
 
 ### Changed
 

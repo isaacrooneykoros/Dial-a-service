@@ -103,6 +103,8 @@ DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 require_postgres(DATABASES["default"]["ENGINE"])
 
 DATABASE_MIGRATION_URL: str = env("DATABASE_MIGRATION_URL", default="")
+# The dial_app URL, kept as a string so the test harness can switch roles.
+DATABASE_APP_URL: str = env("DATABASE_URL")
 # The migration connection is direct (not pooled) and may keep server-side state.
 if USE_MIGRATION_DB:
     DATABASES["default"]["OPTIONS"].pop("prepare_threshold", None)
