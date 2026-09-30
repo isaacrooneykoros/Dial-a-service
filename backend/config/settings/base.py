@@ -67,6 +67,8 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 MIDDLEWARE = [
     "apps.core.request_id.RequestIDMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    # Accept-Language picks English or Swahili for messages (design doc "API contract").
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     # DRF views are CSRF-exempt (bearer tokens); this protects Django admin.
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -151,6 +153,9 @@ REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
     "DEFAULT_PARSER_CLASSES": ["rest_framework.parsers.JSONParser"],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "EXCEPTION_HANDLER": "apps.core.api.exceptions.exception_handler",
+    "DEFAULT_PAGINATION_CLASS": "apps.core.api.pagination.DefaultCursorPagination",
+    "PAGE_SIZE": 20,
     # Authentication arrives in T05b; until then nothing is authenticated and
     # DRF must not touch django.contrib.auth.
     "DEFAULT_AUTHENTICATION_CLASSES": [],
@@ -163,6 +168,8 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "One API for every business; the business comes from the host.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    "SCHEMA_PATH_PREFIX": r"/api/v1",
+    "COMPONENT_SPLIT_REQUEST": True,
 }
 
 # --- Logging ------------------------------------------------------------------

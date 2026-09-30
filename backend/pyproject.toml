@@ -60,6 +60,11 @@ module = [
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
+# drf-spectacular's generator and validator are untyped.
+module = ["apps.core.management.commands.check_openapi"]
+disallow_untyped_calls = false
+
+[[tool.mypy.overrides]]
 module = ["*.tests.*", "tests.*", "conftest"]
 disallow_untyped_defs = false
 disallow_incomplete_defs = false

@@ -1,0 +1,61 @@
+openapi: 3.0.3
+info:
+  title: Dial A Service API
+  version: 1.0.0
+  description: One API for every business; the business comes from the host.
+paths:
+  /api/v1/health:
+    get:
+      operationId: health
+      description: Checks the database and Redis. Returns 503 if either is failing.
+        Answers on any host (it's exempt from business resolution).
+      summary: Service health
+      tags:
+      - health
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthDegraded'
+          description: ''
+components:
+  schemas:
+    Health:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+      - checks
+      - status
+    HealthDegraded:
+      type: object
+      properties:
+        status:
+          type: string
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+      - checks
+      - status
+    StatusEnum:
+      enum:
+      - ok
+      - degraded
+      type: string
+      description: |-
+        * `ok` - ok
+        * `degraded` - degraded
