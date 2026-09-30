@@ -89,7 +89,10 @@ TEMPLATES = [
 # Neon's pooled host. Migrations use DATABASE_MIGRATION_URL (dial_owner) via
 # scripts/migrate.ps1 only. See ADR-0001 section 5.
 
-DATABASES = {"default": env.db("DATABASE_URL")}
+# scripts/migrate.ps1 and migrate.sh set DJANGO_USE_MIGRATION_DB=1 so that
+# migrations (and only migrations) run as the owner role.
+USE_MIGRATION_DB: bool = env.bool("DJANGO_USE_MIGRATION_DB", default=False)
+DATABASES = {"default": env.db("DATABASE_MIGRATION_URL" if USE_MIGRATION_DB else "DATABASE_URL")}
 DATABASES["default"].setdefault("OPTIONS", {})
 # Behind a transaction-mode pooler, prepared statements and server-side cursors
 # would leak between clients.
@@ -100,6 +103,9 @@ DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 require_postgres(DATABASES["default"]["ENGINE"])
 
 DATABASE_MIGRATION_URL: str = env("DATABASE_MIGRATION_URL", default="")
+# The migration connection is direct (not pooled) and may keep server-side state.
+if USE_MIGRATION_DB:
+    DATABASES["default"]["OPTIONS"].pop("prepare_threshold", None)
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
