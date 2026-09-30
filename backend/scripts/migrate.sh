@@ -5,6 +5,9 @@
 set -eu
 
 cd "$(dirname "$0")/.."
-DJANGO_USE_MIGRATION_DB=1 python manage.py migrate "$@"
+# Use the project's virtualenv even if it isn't activated (CI installs into the system Python).
+PYTHON=python
+[ -x .venv/bin/python ] && PYTHON=.venv/bin/python
+DJANGO_USE_MIGRATION_DB=1 "$PYTHON" manage.py migrate "$@"
 # New tables need the app grants (default privileges cover most; this is the safety net).
-python -m scripts.db.setup_roles --grants-only
+"$PYTHON" -m scripts.db.setup_roles --grants-only

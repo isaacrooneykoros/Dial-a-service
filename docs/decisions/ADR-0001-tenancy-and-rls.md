@@ -73,7 +73,12 @@ class TenantModel(BaseModel):          # BaseModel: UUID pk, created_at, updated
 | `dial_platform` | By SQL, run as `dial_owner` | `LOGIN BYPASSRLS` | Platform-admin service and cross-tenant platform jobs (M6) |
 
 - **Why `dial_app` must be created by SQL on Neon:** Neon makes every Console-created role a member of `neon_superuser`, which has `BYPASSRLS`. A member could `SET ROLE neon_superuser` and step around every policy. SQL-created roles get no such membership ([Neon docs: roles](https://neon.com/docs/manage/roles)). T02 includes a test that fails if `dial_app` has `rolbypassrls`, or can become any role that has it.
-- **To verify in T02:** that a Console-created `dial_owner` can create a role `WITH BYPASSRLS` on our project. If Neon refuses, `dial_platform` is created in the Console instead. That's acceptable because only the platform service uses it. The result is recorded in this ADR.
+- **Verified in T02a (2026-10-01, Neon project `dial-a-service`, branch `dev`, Postgres 16):** the Console-created `dial_owner` created `dial_platform WITH BYPASSRLS` by SQL, so no fallback was needed. `scripts/db/setup_roles.py --verify-only` confirmed:
+  - `dial_app` has no superuser, BYPASSRLS, CREATEROLE or CREATEDB;
+  - `dial_app` is not a member of any role that has them;
+  - `dial_app` can't create objects in `public` and owns no tables.
+
+  A live probe as `dial_app` through the pooled host could read tables and was refused `CREATE TABLE`.
 - **Grants** (`create_roles.sql`, idempotent): `USAGE` on schema `public`; `ALTER DEFAULT PRIVILEGES FOR ROLE dial_owner` granting `SELECT, INSERT, UPDATE, DELETE` on tables and `USAGE, SELECT` on sequences to `dial_app` and `dial_platform`. Neither role can create or alter tables.
 - **Connection URLs:** `DATABASE_URL` is `dial_app` through Neon's **pooled** host (`-pooler`). `DATABASE_MIGRATION_URL` is `dial_owner` through the **direct** host. The platform service's `DATABASE_URL` is `dial_platform`.
 - **psycopg 3 behind the pooler:** `OPTIONS={"prepare_threshold": None}`, `DISABLE_SERVER_SIDE_CURSORS=True`, `CONN_HEALTH_CHECKS=True`.
