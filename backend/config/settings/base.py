@@ -65,6 +65,7 @@ LOCAL_APPS = [
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
+    "apps.core.request_id.RequestIDMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.middleware.common.CommonMiddleware",
     # DRF views are CSRF-exempt (bearer tokens); this protects Django admin.
@@ -162,6 +163,26 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "One API for every business; the business comes from the host.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
+}
+
+# --- Logging ------------------------------------------------------------------
+# JSON lines with request IDs; phone numbers masked and secrets redacted
+# (apps/core/logging.py, CLAUDE.md section 6.7).
+
+LOG_LEVEL: str = env("DJANGO_LOG_LEVEL", default="INFO")
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {"json": {"()": "apps.core.logging.JsonFormatter"}},
+    "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "json"}},
+    "root": {"handlers": ["console"], "level": LOG_LEVEL},
+    "loggers": {
+        "django": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
+        # SQL is never logged: it can carry phone numbers in parameters.
+        "django.db.backends": {"handlers": ["console"], "level": "WARNING", "propagate": False},
+        "celery": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
+    },
 }
 
 # --- Error tracking -----------------------------------------------------------

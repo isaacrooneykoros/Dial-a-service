@@ -14,6 +14,7 @@ All notable changes, grouped by milestone. Updated at the end of each milestone.
 
 - Database roles (T02a): `dial_owner`, `dial_app` (NOBYPASSRLS) and `dial_platform` (BYPASSRLS) with per-database grants, a setup and verification script, migration scripts that run only as the owner, and `docs/ops/neon-dev.md`. Verified on the Neon `dev` branch.
 - Test database harness (T02b): pytest creates and migrates the test database as `dial_owner`, applies the grants, then runs every test as `dial_app` over Neon's direct host. Tests prove the test role can't bypass RLS or create tables.
+- Core (T03a): `BaseModel` (random UUID key, UTC timestamps); request IDs on every request, response (`X-Request-ID`) and log line; JSON logging that masks Kenyan phone numbers and redacts passwords, PINs, codes, tokens and secrets at any depth.
 
 ### Changed
 
