@@ -1,0 +1,23 @@
+# Exact pins (direct and transitive). Direct dependencies are the approved list in CLAUDE.md section 4.
+# To upgrade: change a direct pin, reinstall in a clean venv, and re-freeze. Never add a package without an ADR.
+-r base.txt
+
+colorama==0.4.6
+coverage==7.16.2
+django-stubs==5.2.9
+django-stubs-ext==5.2.9
+factory_boy==3.3.3
+Faker==40.40.0
+iniconfig==2.3.0
+librt==0.16.0
+mypy==1.19.1
+mypy_extensions==1.1.0
+pathspec==1.1.1
+pluggy==1.6.0
+Pygments==2.21.0
+pytest==9.1.1
+pytest-django==4.14.0
+ruff==0.16.9
+time-machine==3.5.1
+types-PyYAML==6.0.12.20260906
+

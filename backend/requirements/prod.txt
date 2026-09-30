@@ -1,0 +1,6 @@
+# Exact pins (direct and transitive). Direct dependencies are the approved list in CLAUDE.md section 4.
+# To upgrade: change a direct pin, reinstall in a clean venv, and re-freeze. Never add a package without an ADR.
+-r base.txt
+
+gunicorn==26.2.0
+

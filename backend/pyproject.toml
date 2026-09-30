@@ -1,0 +1,77 @@
+[project]
+name = "dial-a-service-backend"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = ["apps/*/migrations/*"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W", "F",   # pycodestyle, pyflakes
+    "I",             # import order
+    "B",             # bugbear
+    "UP",            # pyupgrade
+    "N",             # naming
+    "S",             # bandit (security)
+    "DJ",            # django
+    "DTZ",           # naive datetimes
+    "T20",           # no print()
+    "SIM", "C4", "RUF", "PT", "PIE", "RET", "PTH",
+]
+ignore = [
+    "RUF012",        # Django/DRF class attributes (Meta, fields) are mutable by design
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S101", "S105", "S106"]  # asserts and fake credentials in tests
+"tests/**" = ["S101", "S105", "S106"]
+"conftest.py" = ["S101"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "config"]
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["mypy_django_plugin.main"]
+strict = true
+warn_unreachable = true
+# DRF, Celery and some libraries ship without type information; their stub
+# packages are not on the approved dependency list (CLAUDE.md section 4).
+disallow_subclassing_any = false
+disallow_untyped_decorators = false
+exclude = ["^\\.venv/", "/migrations/"]
+
+[[tool.mypy.overrides]]
+module = [
+    "rest_framework.*",
+    "rest_framework_simplejwt.*",
+    "drf_spectacular.*",
+    "celery.*",
+    "kombu.*",
+    "environ.*",
+    "storages.*",
+    "boto3.*",
+    "botocore.*",
+    "factory.*",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["*.tests.*", "tests.*", "conftest"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
+[tool.django-stubs]
+django_settings_module = "config.settings.test"
+
+[tool.coverage.run]
+branch = true
+source = ["apps", "config"]
+omit = ["*/migrations/*", "*/tests/*", "config/wsgi.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
