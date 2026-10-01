@@ -45,7 +45,7 @@ class TenantModel(BaseModel):          # BaseModel: UUID pk, created_at, updated
 - Serializers never expose `business` as writable (it's `editable=False`), and a test checks every serializer for this.
 - Composite indexes and unique constraints start with `business`.
 - Related-object access (`order.customer`) uses Django's base manager, which is not filtered; RLS covers that path.
-- A ruff rule bans `.unscoped` outside files that carry a `# platform-scope:` comment on the same line.
+- `tests/test_code_rules.py` fails if any line uses `.unscoped` without a `# platform-scope: <reason>` comment on the same line (ruff can't express this rule; as built in T04a).
 
 **Nullable-tenant models.** Two models have rows that belong to no business: `accounts.User` (platform staff) and `core.AuditLog` (platform actions, P-12). They don't subclass `TenantModel`. They get a nullable `business` FK, the same RLS policy, and an entry in the registry's `NULLABLE_TENANT_MODELS` list. Under RLS, rows with a NULL business are invisible to `dial_app` (NULL never equals the setting) and visible only to `dial_platform`. `User` gets two partial unique constraints: `(business, phone) WHERE business IS NOT NULL` and `(phone) WHERE business IS NULL`.
 
@@ -92,7 +92,7 @@ class TenantModel(BaseModel):          # BaseModel: UUID pk, created_at, updated
 
 ### 7. How tests prove isolation
 
-- **Test roles:** a `django_db_setup` override in `backend/conftest.py` creates and migrates the test database as `dial_owner` (so tables are owned and RLS is forced as in production), then points the default connection at the same database as `dial_app`. A smoke test asserts `current_user = 'dial_app'` and that it can't bypass RLS. SQLite is refused by settings.
+- **Test roles:** a `django_db_setup` override in `backend/conftest.py` creates and migrates the test database as `dial_owner` (so tables are owned and RLS is forced as in production), then points the default connection at the same database as `dial_app`. A smoke test asserts `current_user = 'dial_app'` and that it can't bypass RLS. SQLite is refused by settings. In the test database only, `dial_app` is also granted `TRUNCATE`, which Django needs to empty tables after transactional tests; real databases never grant it.
 - **Contract test** (`tests/test_tenancy_contract.py`): for every installed model, exactly one of these must hold:
   1. it's in `GLOBAL_MODELS` in `apps/tenancy/registry.py` (Business, BusinessDomain, AppVersion, and Django's own contenttypes, auth Permission/Group and migrations), each with a reason;
   2. it's a `TenantModel` whose table has RLS enabled and forced, and a `tenant_isolation` policy in `pg_policies`;

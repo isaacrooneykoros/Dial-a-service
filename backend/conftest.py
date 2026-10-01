@@ -64,6 +64,10 @@ def django_db_setup(
         )
         with connections["default"].cursor() as cursor:
             cursor.execute(GRANTS_SQL.read_text(encoding="utf-8"))
+            # Test database only: transactional tests (django_db(transaction=True))
+            # empty every table afterwards with TRUNCATE, which dial_app is never
+            # granted in real databases.
+            cursor.execute("GRANT TRUNCATE ON ALL TABLES IN SCHEMA public TO dial_app")
         _use(app)
 
     yield

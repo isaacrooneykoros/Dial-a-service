@@ -13,3 +13,6 @@ CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"
 
 CELERY_BROKER_URL = "memory://"
 CELERY_TASK_ALWAYS_EAGER = True
+
+# A test-only app with a tenant model (tests/testapp).
+INSTALLED_APPS = [*INSTALLED_APPS, "tests.testapp"]  # noqa: F405

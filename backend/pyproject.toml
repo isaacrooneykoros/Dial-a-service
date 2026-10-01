@@ -6,7 +6,7 @@ requires-python = ">=3.12,<3.13"
 [tool.ruff]
 target-version = "py312"
 line-length = 100
-extend-exclude = ["apps/*/migrations/*"]
+extend-exclude = ["**/migrations/*"]
 
 [tool.ruff.lint]
 select = [
@@ -55,9 +55,14 @@ module = [
     "storages.*",
     "boto3.*",
     "botocore.*",
-    "factory.*",
 ]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# factory_boy's partial hints make Factory() look like it returns the factory.
+module = ["factory.*"]
+ignore_missing_imports = true
+follow_imports = "skip"
 
 [[tool.mypy.overrides]]
 # drf-spectacular's generator and validator are untyped.
