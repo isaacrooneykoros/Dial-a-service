@@ -1,8 +1,11 @@
 """Factories for core models. Call inside tenant_context()."""
 
-import factory
+from datetime import timedelta
 
-from apps.core.models import AuditLog, OutboxEvent
+import factory
+from django.utils import timezone
+
+from apps.core.models import AuditLog, IdempotencyKey, OutboxEvent
 from apps.core.tenant_context import peek_current_business_id
 
 
@@ -20,3 +23,15 @@ class OutboxEventFactory(factory.django.DjangoModelFactory[OutboxEvent]):
 
     type = "test.event"
     payload = factory.Dict({})
+
+
+class IdempotencyKeyFactory(factory.django.DjangoModelFactory[IdempotencyKey]):
+    class Meta:
+        model = IdempotencyKey
+
+    scope = "ip:127.0.0.1"
+    key = factory.Sequence(lambda n: f"key-{n:08d}")
+    method = "POST"
+    path = "/api/v1/x"
+    body_hash = "0" * 64
+    expires_at = factory.LazyFunction(lambda: timezone.now() + timedelta(hours=24))

@@ -79,3 +79,11 @@ def handle_due_events(limit: int) -> int:
         handle(event)
         handled += 1
     return handled
+
+
+def purge_expired_idempotency_keys() -> int:
+    """Delete the current business's idempotency keys older than 24 hours."""
+    from apps.core.models import IdempotencyKey
+
+    deleted, _ = IdempotencyKey.objects.filter(expires_at__lte=timezone.now()).delete()
+    return deleted

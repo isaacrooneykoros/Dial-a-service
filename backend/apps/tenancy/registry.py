@@ -19,6 +19,7 @@ GLOBAL_MODELS: dict[str, str] = {
     "auth.permission": "Django's permission catalogue; no business data, unused by the API.",
     "auth.group": "Django's groups; no business data, unused (roles are fixed per user).",
     "auth.group_permissions": "Link table between the two above; no business data.",
+    "core.appversion": "Minimum and latest app versions; the same for every business (X-02).",
 }
 
 NULLABLE_TENANT_MODELS: dict[str, str] = {

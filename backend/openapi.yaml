@@ -4,6 +4,31 @@ info:
   version: 1.0.0
   description: One API for every business; the business comes from the host.
 paths:
+  /api/v1/app/version:
+    get:
+      operationId: app_version
+      description: With no row for the app, every version is allowed (minimum "0.0.0").
+      summary: X-01 / X-02 Minimum and latest version of an app
+      parameters:
+      - in: query
+        name: app
+        schema:
+          type: string
+          default: web
+      - in: query
+        name: platform
+        schema:
+          type: string
+          default: web
+      tags:
+      - app
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppVersion'
+          description: ''
   /api/v1/auth/invitations/{token}:
     get:
       operationId: auth_invitation_detail
@@ -314,6 +339,19 @@ paths:
           description: Error envelope
         '429':
           description: Error envelope with retry_after
+  /api/v1/business/config:
+    get:
+      operationId: business_config
+      summary: X-01 Branding, basics and maintenance for this business
+      tags:
+      - business
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessConfig'
+          description: ''
   /api/v1/console/devices:
     get:
       operationId: console_devices_list
@@ -665,6 +703,22 @@ components:
           description: Access token (15 minutes). Keep it in memory only.
       required:
       - access
+    AppVersion:
+      type: object
+      properties:
+        app:
+          type: string
+        platform:
+          type: string
+        minimum:
+          type: string
+        latest:
+          type: string
+      required:
+      - app
+      - latest
+      - minimum
+      - platform
     Branch:
       type: object
       properties:
@@ -676,6 +730,19 @@ components:
       required:
       - id
       - name
+    BusinessConfig:
+      type: object
+      properties:
+        business:
+          $ref: '#/components/schemas/ConfigBusiness'
+        branding:
+          $ref: '#/components/schemas/ConfigBranding'
+        maintenance:
+          $ref: '#/components/schemas/Maintenance'
+      required:
+      - branding
+      - business
+      - maintenance
     CodeRequest:
       type: object
       properties:
@@ -686,6 +753,56 @@ components:
           pattern: ^\d{6}$
       required:
       - code
+    ConfigBranding:
+      type: object
+      properties:
+        app_name:
+          type: string
+        logo_url:
+          type: string
+        primary_color:
+          type: string
+        accent_color:
+          type: string
+        support_phone:
+          type: string
+        whatsapp_phone:
+          type: string
+        terms_url:
+          type: string
+        privacy_url:
+          type: string
+      required:
+      - accent_color
+      - app_name
+      - logo_url
+      - primary_color
+      - privacy_url
+      - support_phone
+      - terms_url
+      - whatsapp_phone
+    ConfigBusiness:
+      type: object
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        country:
+          type: string
+        currency:
+          type: string
+        timezone:
+          type: string
+        language:
+          type: string
+      required:
+      - country
+      - currency
+      - language
+      - name
+      - slug
+      - timezone
     ConsoleDevice:
       type: object
       description: 'A-42: registered counter devices (name, branch, registered by,
@@ -918,6 +1035,16 @@ components:
       required:
       - access
       - user
+    Maintenance:
+      type: object
+      properties:
+        active:
+          type: boolean
+        expected_return:
+          type: string
+      required:
+      - active
+      - expected_return
     Me:
       type: object
       description: The signed-in person. Read-only; a plain serializer so no queries

@@ -78,6 +78,8 @@ MIDDLEWARE = [
     # Then the rest of the request runs in that business's transaction.
     "apps.tenancy.middleware.TenantResolutionMiddleware",
     "apps.tenancy.middleware.TenantTransactionMiddleware",
+    # Inside the request transaction, so a failed request also drops its key.
+    "apps.accounts.idempotency.IdempotencyMiddleware",
     # Accept-Language picks English or Swahili for messages (design doc "API contract").
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -184,6 +186,10 @@ CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_TIMEZONE = "UTC"
 CELERY_BEAT_SCHEDULE = {
     "sweep-outbox": {"task": "apps.tenancy.tasks.sweep_outbox", "schedule": 60.0},
+    "purge-idempotency-keys": {
+        "task": "apps.tenancy.tasks.purge_idempotency_keys",
+        "schedule": 3600.0,
+    },
 }
 
 # --- API ----------------------------------------------------------------------
@@ -263,6 +269,12 @@ LOGGING = {
         "celery": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
     },
 }
+
+# --- Maintenance (X-03) -----------------------------------------------------------
+# Planned downtime is platform-wide. The apps read it from /business/config and
+# show X-03 with the expected return time (ISO 8601, e.g. 2026-10-02T06:00:00+03:00).
+MAINTENANCE_MODE: bool = env.bool("MAINTENANCE_MODE", default=False)
+MAINTENANCE_EXPECTED_RETURN: str = env("MAINTENANCE_EXPECTED_RETURN", default="")
 
 # --- Notifications ------------------------------------------------------------
 # Development prints SMS to the terminal. The real gateway backend arrives with

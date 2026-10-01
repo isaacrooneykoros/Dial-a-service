@@ -1,11 +1,9 @@
 """Signed-in test clients and the token half of the cross-business harness."""
 
-from rest_framework.test import APIClient
-
 from apps.accounts.models import User, UserSession
 from apps.accounts.services.auth import SignedIn, _start_session
 from apps.core.tenant_context import tenant_context
-from apps.core.testing.tenancy import host_of
+from apps.core.testing.tenancy import AppClient, host_of
 from apps.tenancy.models import Business
 
 
@@ -15,8 +13,8 @@ def sign_in(user: User, kind: str = UserSession.Kind.PASSWORD) -> SignedIn:
         return _start_session(user, None, kind)
 
 
-def client_for(business: Business, access: str | None = None) -> APIClient:
-    client = APIClient(headers={"host": host_of(business)}, raise_request_exception=False)
+def client_for(business: Business, access: str | None = None) -> AppClient:
+    client = AppClient(headers={"host": host_of(business)}, raise_request_exception=False)
     if access:
         client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
     return client

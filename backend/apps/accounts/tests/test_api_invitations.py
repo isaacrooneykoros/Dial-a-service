@@ -466,3 +466,14 @@ class TestFirstPin:
             user = UserFactory(role=Role.ACCOUNTANT)
         response = as_user(user).post("/api/v1/me/pin", {"pin": "4826"}, format="json")
         assert response.status_code == 403
+
+
+def test_rights_are_optional_and_default_to_off(owner: User) -> None:
+    body = {"phone": "0722000111", "first_name": "A", "last_name": "B", "role": "accountant"}
+    response = as_user(owner).post(INVITES, body, format="json")
+    assert response.status_code == 201, response.json()
+    assert response.json()["rights"] == {
+        "accept_cash": False,
+        "give_discounts": False,
+        "correct_prices": False,
+    }

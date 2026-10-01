@@ -52,3 +52,14 @@ def widget_detail_leaky_cache(request: HttpRequest, pk: str) -> JsonResponse:
         data = {"id": str(widget.pk), "name": widget.name}
         cache.set(key, data, 60)
     return JsonResponse(data)
+
+
+def api_create_then_raise(request: HttpRequest) -> HttpResponse:
+    """A POST under /api/v1 that writes and then crashes (idempotency rollback test)."""
+    Widget.objects.create(name="half-done")
+    raise RuntimeError("crashed after writing")
+
+
+def api_create(request: HttpRequest) -> JsonResponse:
+    widget = Widget.objects.create(name=f"made-{Widget.objects.count()}")
+    return JsonResponse({"id": str(widget.pk), "name": widget.name}, status=201)

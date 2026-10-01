@@ -4,7 +4,7 @@ from typing import Any
 
 from celery import shared_task
 
-from apps.core.tasks import handle_due_events
+from apps.core.tasks import handle_due_events, purge_expired_idempotency_keys
 from apps.core.tenant_context import tenant_context
 from apps.tenancy.selectors import all_business_ids
 
@@ -23,3 +23,13 @@ def sweep_outbox() -> dict[str, Any]:
         with tenant_context(business_id):
             handled += handle_due_events(SWEEP_BATCH)
     return {"handled": handled}
+
+
+@shared_task(name="apps.tenancy.tasks.purge_idempotency_keys")  # platform-scope: every business
+def purge_idempotency_keys() -> dict[str, Any]:
+    """Hourly: drop idempotency keys past their 24 hours, business by business."""
+    deleted = 0
+    for business_id in all_business_ids():
+        with tenant_context(business_id):
+            deleted += purge_expired_idempotency_keys()
+    return {"deleted": deleted}

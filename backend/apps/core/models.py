@@ -195,3 +195,49 @@ class OutboxEvent(TenantModel):
 
     def __str__(self) -> str:
         return f"{self.type} ({self.pk})"
+
+
+class IdempotencyKey(TenantModel):
+    """A request the apps may retry; the first response is kept for 24 hours (CLAUDE.md 6.5).
+
+    ``scope`` is the signed-in user's ID, or "ip:<address>" for anonymous calls.
+    A row without a stored response is a request still in progress.
+    """
+
+    scope = models.CharField(max_length=80)
+    key = models.CharField(max_length=100)
+    method = models.CharField(max_length=8)
+    path = models.CharField(max_length=255)
+    body_hash = models.CharField(max_length=64)
+    response_status = models.PositiveSmallIntegerField(null=True, blank=True)
+    response_body = models.TextField(blank=True)
+    response_content_type = models.CharField(max_length=100, blank=True)
+    expires_at = models.DateTimeField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["business", "scope", "key"], name="idempotency_key_unique"
+            ),
+        ]
+        indexes = [models.Index(fields=["business", "expires_at"], name="idempotency_expiry")]
+
+    def __str__(self) -> str:
+        return f"{self.method} {self.path} ({self.key})"
+
+
+class AppVersion(BaseModel):
+    """Minimum and latest version per app and platform (X-01, X-02). Global."""
+
+    app = models.CharField(max_length=20)
+    platform = models.CharField(max_length=20)
+    minimum = models.CharField(max_length=20)
+    latest = models.CharField(max_length=20)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["app", "platform"], name="one_version_per_app"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.app}/{self.platform} {self.minimum}..{self.latest}"

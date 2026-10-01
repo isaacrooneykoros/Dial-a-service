@@ -7,7 +7,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db import connection
 from django.http import HttpRequest, JsonResponse
-from drf_spectacular.utils import extend_schema, inline_serializer
+from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers
 from rest_framework.decorators import (
     api_view,
@@ -20,6 +20,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from apps.core.api.errors import error_json
+from apps.core.models import AppVersion
 
 logger = logging.getLogger(__name__)
 
@@ -92,3 +93,38 @@ def not_found(request: HttpRequest, exception: Exception | None = None) -> JsonR
 
 def server_error(request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:
     return error_json(request, 500, "server_error")
+
+
+class AppVersionSerializer(serializers.Serializer[Any]):
+    app = serializers.CharField()
+    platform = serializers.CharField()
+    minimum = serializers.CharField()
+    latest = serializers.CharField()
+
+
+@extend_schema(
+    operation_id="app_version",
+    summary="X-01 / X-02 Minimum and latest version of an app",
+    parameters=[
+        OpenApiParameter("app", str, default="web"),
+        OpenApiParameter("platform", str, default="web"),
+    ],
+    responses={200: AppVersionSerializer},
+    auth=[],
+)
+@api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def app_version(request: Request) -> Response:
+    """With no row for the app, every version is allowed (minimum "0.0.0")."""
+    app = request.query_params.get("app", "web")[:20]
+    platform = request.query_params.get("platform", "web")[:20]
+    row = AppVersion.objects.filter(app=app, platform=platform).first()
+    return Response(
+        {
+            "app": app,
+            "platform": platform,
+            "minimum": row.minimum if row else "0.0.0",
+            "latest": row.latest if row else "0.0.0",
+        }
+    )

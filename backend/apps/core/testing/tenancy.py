@@ -17,6 +17,7 @@ warming any cache), then as the intruder, who must get the same 404 envelope
 as for an object that doesn't exist (X-04: identical for both cases).
 """
 
+import uuid
 from collections.abc import Callable
 from typing import Any
 
@@ -29,6 +30,26 @@ from apps.tenancy.models import Business
 from apps.tenancy.tests.factories import BusinessDomainFactory
 
 ClientFor = Callable[..., APIClient]
+
+
+class AppClient(APIClient):
+    """Behaves like the apps: every POST carries a fresh Idempotency-Key (CLAUDE.md 6.5),
+    unless the test passes its own (``HTTP_IDEMPOTENCY_KEY``) or ``idempotency_key=None``."""
+
+    def post(
+        self,
+        path: str,
+        data: Any = None,
+        format: str | None = None,
+        *args: Any,
+        idempotency_key: str | bool | None = True,
+        **extra: Any,
+    ) -> Any:
+        if idempotency_key is True:
+            extra.setdefault("HTTP_IDEMPOTENCY_KEY", uuid.uuid4().hex)
+        elif isinstance(idempotency_key, str):
+            extra["HTTP_IDEMPOTENCY_KEY"] = idempotency_key
+        return super().post(path, data, format, *args, **extra)
 
 
 def host_of(business: Business) -> str:
@@ -61,7 +82,7 @@ def api_client_for() -> ClientFor:
     """
 
     def build(business: Business, user: Any = None) -> APIClient:
-        client = APIClient(headers={"host": host_of(business)}, raise_request_exception=False)
+        client = AppClient(headers={"host": host_of(business)}, raise_request_exception=False)
         if user is not None:
             client.force_authenticate(user)
         return client
@@ -85,7 +106,7 @@ def assert_cross_business_404[T](
         obj = make_object()
     url = url_for(obj)
 
-    owner_client = owner_client or APIClient(
+    owner_client = owner_client or AppClient(
         headers={"host": host_of(owner)}, raise_request_exception=False
     )
     owner_response = getattr(owner_client, method)(url, data=data, format="json")

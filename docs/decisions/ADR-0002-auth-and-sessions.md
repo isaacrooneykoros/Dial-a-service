@@ -135,7 +135,7 @@ All paths are under `/api/v1`. POSTs follow the idempotency rules in §8.
 
 ### 8. Idempotency on auth endpoints
 
-`Idempotency-Key` is **required** on authenticated mutating POSTs (§6.5). On the anonymous auth endpoints (login, refresh, password reset, invitation steps, pin-switch) it is **optional**. Those endpoints are safe to repeat or are protected by throttles and single-use tokens, and a failed first attempt must not block a retry. When a key is sent, it is stored per business, anonymous, IP and key.
+`Idempotency-Key` is **required** on authenticated mutating POSTs (§6.5). On the anonymous auth endpoints (login, refresh, password reset, invitation steps, pin-switch) it is **optional**. Those endpoints are safe to repeat or are protected by throttles and single-use tokens, and a failed first attempt must not block a retry. **As built (T07c):** `/api/v1/auth/*` is excluded from idempotency storage altogether, because its responses carry access tokens and storing them would put working tokens in the database. Other anonymous POSTs that send a key are stored per business, IP and key.
 
 ### 9. Throttles
 

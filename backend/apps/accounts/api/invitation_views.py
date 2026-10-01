@@ -98,9 +98,9 @@ class InvitationListCreateView(generics.ListAPIView[Invitation]):
             last_name=data["last_name"],
             role=data["role"],
             branch_ids=data["branch_ids"],
-            can_accept_cash=data["rights"]["accept_cash"],
-            can_give_discounts=data["rights"]["give_discounts"],
-            can_correct_prices=data["rights"]["correct_prices"],
+            can_accept_cash=data["rights"].get("accept_cash", False),
+            can_give_discounts=data["rights"].get("give_discounts", False),
+            can_correct_prices=data["rights"].get("correct_prices", False),
         )
         try:
             invitation = invitations.invite(request.user, details, request=request)

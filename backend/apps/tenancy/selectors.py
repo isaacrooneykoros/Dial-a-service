@@ -85,3 +85,30 @@ def primary_host(business_id: UUID) -> str:
     if host is None:
         raise LookupError(f"Business {business_id} has no web address.")
     return str(host)
+
+
+def business_config(business_id: UUID) -> dict[str, Any]:
+    """What every app needs at start-up (X-01). Never anything secret."""
+    business = Business.objects.get(pk=business_id)
+    branding = BusinessBranding.objects.first()
+    defaults = BusinessBranding()
+    return {
+        "business": {
+            "name": business.name,
+            "slug": business.slug,
+            "country": business.country,
+            "currency": business.currency,
+            "timezone": business.timezone,
+            "language": business.language,
+        },
+        "branding": {
+            "app_name": branding.app_name if branding else business.name,
+            "logo_url": branding.logo_url if branding else "",
+            "primary_color": (branding or defaults).primary_color,
+            "accent_color": (branding or defaults).accent_color,
+            "support_phone": branding.support_phone if branding else "",
+            "whatsapp_phone": branding.whatsapp_phone if branding else "",
+            "terms_url": branding.terms_url if branding else "",
+            "privacy_url": branding.privacy_url if branding else "",
+        },
+    }
