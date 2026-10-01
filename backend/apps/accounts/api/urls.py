@@ -1,5 +1,6 @@
 from django.urls import path
 
+from apps.accounts.api import invitation_views as inv
 from apps.accounts.api import views
 
 urlpatterns = [
@@ -22,6 +23,30 @@ urlpatterns = [
         name="auth-password-reset-confirm",
     ),
     path("auth/password/change", views.PasswordChangeView.as_view(), name="auth-password-change"),
+    path("auth/invitations/accept", inv.InvitationAcceptView.as_view(), name="invitation-accept"),
+    path("auth/invitations/<str:token>", inv.PublicInvitationView.as_view(), name="invitation"),
+    path(
+        "auth/invitations/<str:token>/send-code",
+        inv.InvitationSendCodeView.as_view(),
+        name="invitation-send-code",
+    ),
+    path(
+        "auth/invitations/<str:token>/verify",
+        inv.InvitationVerifyView.as_view(),
+        name="invitation-verify",
+    ),
+    path("console/invitations", inv.InvitationListCreateView.as_view(), name="invitations"),
+    path(
+        "console/invitations/<uuid:pk>/resend",
+        inv.InvitationResendView.as_view(),
+        name="invitation-resend",
+    ),
+    path(
+        "console/invitations/<uuid:pk>/cancel",
+        inv.InvitationCancelView.as_view(),
+        name="invitation-cancel",
+    ),
+    path("me/pin", inv.MyPinView.as_view(), name="me-pin"),
     path("me", views.MeView.as_view(), name="me"),
     path("me/branches", views.MyBranchesView.as_view(), name="me-branches"),
 ]

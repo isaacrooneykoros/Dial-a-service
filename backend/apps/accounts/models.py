@@ -240,3 +240,93 @@ class PhoneOTP(TenantModel):
 
     def __str__(self) -> str:
         return f"{self.purpose} code ({self.pk})"
+
+
+# What people see for each role in messages and on X-14 (10-screens-shared.md:
+# "Rider / Shop staff / Shop owner"; the other labels follow the same style).
+ROLE_LABELS: dict[str, str] = {
+    Role.OWNER: "Shop owner",
+    Role.MANAGER: "Shop manager",
+    Role.ACCOUNTANT: "Accountant",
+    Role.STAFF: "Shop staff",
+    Role.RIDER: "Rider",
+}
+
+# Roles an invitation can carry in M1 (owner decision D-26: owners invite owners
+# from M5, riders arrive in M9).
+INVITABLE_ROLES = (Role.MANAGER, Role.ACCOUNTANT, Role.STAFF)
+
+
+class Invitation(TenantModel):
+    """An SMS invitation to join a business (A-41, X-14; ADR-0002 section 6)."""
+
+    phone = models.CharField(max_length=16)
+    first_name = models.CharField(max_length=60)
+    last_name = models.CharField(max_length=60)
+    role = models.CharField(max_length=24, choices=Role.choices)
+    can_accept_cash = models.BooleanField(default=False)
+    can_give_discounts = models.BooleanField(default=False)
+    can_correct_prices = models.BooleanField(default=False)
+    invited_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+    token_hash = models.CharField(max_length=64, unique=True, editable=False)
+    expires_at = models.DateTimeField()
+    sent_count = models.PositiveSmallIntegerField(default=1)
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    accepted_user = models.ForeignKey(
+        User, on_delete=models.PROTECT, null=True, blank=True, related_name="+"
+    )
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["business", "phone"],
+                condition=models.Q(accepted_at__isnull=True, cancelled_at__isnull=True),
+                name="one_open_invitation_per_phone",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"Invitation for {self.first_name} {self.last_name} ({self.role})"
+
+    @property
+    def is_open(self) -> bool:
+        return (
+            self.accepted_at is None
+            and self.cancelled_at is None
+            and self.expires_at > timezone.now()
+        )
+
+
+class InvitationBranch(TenantModel):
+    """A branch the invited person will work at (explicit link table, ADR-0001 section 7)."""
+
+    invitation = models.ForeignKey(Invitation, on_delete=models.CASCADE, related_name="+")
+    branch = models.ForeignKey("branches.Branch", on_delete=models.PROTECT, related_name="+")
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["business", "invitation", "branch"], name="invitation_branch_unique"
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.invitation_id} -> {self.branch_id}"
+
+
+class ConsentRecord(TenantModel):
+    """Which terms or policy version someone accepted, and when (append-only).
+
+    Used from customer sign-up (C-04, M9) and terms updates (C-49); created now
+    because the data model puts it in accounts.
+    """
+
+    user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+    document = models.CharField(max_length=32)
+    version = models.CharField(max_length=32)
+    accepted_at = models.DateTimeField(default=timezone.now)
+    ip = models.GenericIPAddressField(null=True, blank=True)
+
+    def __str__(self) -> str:
+        return f"{self.document} {self.version}"

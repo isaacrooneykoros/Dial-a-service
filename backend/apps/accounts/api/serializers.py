@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
-from apps.accounts.models import Role, User
+from apps.accounts.models import INVITABLE_ROLES, Invitation, Role, User
 from apps.accounts.phones import InvalidPhoneError, normalize_ke_phone
 
 
@@ -100,3 +100,68 @@ class LoginResponseSerializer(AccessSerializer):
 class BranchSerializer(serializers.Serializer[Any]):
     id = serializers.UUIDField()
     name = serializers.CharField()
+
+
+class RightsInputSerializer(serializers.Serializer[Any]):
+    accept_cash = serializers.BooleanField(default=False)
+    give_discounts = serializers.BooleanField(default=False)
+    correct_prices = serializers.BooleanField(default=False)
+
+
+class InvitationCreateSerializer(serializers.Serializer[Any]):
+    phone = serializers.CharField(max_length=32)
+    first_name = serializers.CharField(max_length=60)
+    last_name = serializers.CharField(max_length=60)
+    role = serializers.ChoiceField(choices=[(r.value, r.label) for r in INVITABLE_ROLES])
+    branch_ids = serializers.ListField(child=serializers.UUIDField(), default=list)
+    rights = RightsInputSerializer(default=dict)
+
+    def validate_phone(self, value: str) -> str:
+        return validate_ke_phone(value)
+
+
+class InvitationSerializer(serializers.Serializer[Invitation]):
+    id = serializers.UUIDField(read_only=True)
+    phone = serializers.CharField(read_only=True)
+    first_name = serializers.CharField(read_only=True)
+    last_name = serializers.CharField(read_only=True)
+    role = serializers.CharField(read_only=True)
+    rights = RightsSerializer(source="*", read_only=True)
+    branch_ids = serializers.SerializerMethodField()
+    expires_at = serializers.DateTimeField(read_only=True)
+    sent_count = serializers.IntegerField(read_only=True)
+    is_open = serializers.BooleanField(read_only=True)
+
+    def get_branch_ids(self, invitation: Invitation) -> list[str]:
+        from apps.accounts.services.invitations import branch_ids_of
+
+        return [str(branch_id) for branch_id in branch_ids_of(invitation)]
+
+
+class PublicInvitationSerializer(serializers.Serializer[Any]):
+    """What X-14 shows: "{Business} invited you to join as {role}" and the phone."""
+
+    business_name = serializers.CharField()
+    role = serializers.CharField()
+    role_label = serializers.CharField()
+    first_name = serializers.CharField()
+    phone = serializers.CharField()
+
+
+class CodeSerializer(serializers.Serializer[Any]):
+    code = serializers.RegexField(r"^\d{6}$", max_length=6)
+
+
+class SetupTokenSerializer(serializers.Serializer[Any]):
+    setup_token = serializers.CharField(help_text="Single use, valid for 10 minutes.")
+
+
+class InvitationAcceptSerializer(serializers.Serializer[Any]):
+    setup_token = serializers.CharField(max_length=128)
+    password = serializers.CharField(
+        max_length=128, trim_whitespace=False, validators=[validate_new_password]
+    )
+
+
+class PinSerializer(serializers.Serializer[Any]):
+    pin = serializers.CharField(max_length=4, min_length=4, trim_whitespace=False)

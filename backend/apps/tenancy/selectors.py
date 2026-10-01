@@ -72,3 +72,16 @@ def support_contact(business_id: UUID) -> tuple[str, str]:
         return branding[0], branding[1]
     name = Business.objects.filter(pk=business_id).values_list("name", flat=True).first()
     return name or "", ""
+
+
+def primary_host(business_id: UUID) -> str:
+    """The business's main web address, for links in messages."""
+    host = (
+        BusinessDomain.objects.filter(business_id=business_id)
+        .order_by("-is_primary", "created_at")
+        .values_list("host", flat=True)
+        .first()
+    )
+    if host is None:
+        raise LookupError(f"Business {business_id} has no web address.")
+    return str(host)

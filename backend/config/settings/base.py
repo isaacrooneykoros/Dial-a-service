@@ -222,6 +222,12 @@ SIMPLE_JWT = {
     "USER_ID_CLAIM": "user_id",
 }
 
+# Links in messages (invitations) point at the business's own address:
+# https://mamasafi.dialaservice.co.ke/invite/... Local development adds the
+# Vite port: http://mamasafi.localhost:5173/invite/...
+APP_LINK_SCHEME: str = env("APP_LINK_SCHEME", default="https")
+APP_LINK_PORT: str = env("APP_LINK_PORT", default="")
+
 # Key for hashing SMS codes and the grants they unlock (ADR-0002 section 4).
 OTP_HASH_KEY: str = env("OTP_HASH_KEY", default=SECRET_KEY)
 

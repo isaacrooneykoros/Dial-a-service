@@ -4,6 +4,121 @@ info:
   version: 1.0.0
   description: One API for every business; the business comes from the host.
 paths:
+  /api/v1/auth/invitations/{token}:
+    get:
+      operationId: auth_invitation_detail
+      summary: X-14 What this invitation is
+      parameters:
+      - in: path
+        name: token
+        schema:
+          type: string
+        required: true
+      tags:
+      - auth
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicInvitation'
+          description: ''
+        '400':
+          description: Error envelope
+        '401':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '429':
+          description: Error envelope with retry_after
+  /api/v1/auth/invitations/{token}/send-code:
+    post:
+      operationId: auth_invitation_send_code
+      summary: X-14 Send code
+      parameters:
+      - in: path
+        name: token
+        schema:
+          type: string
+        required: true
+      tags:
+      - auth
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: ''
+        '400':
+          description: Error envelope
+        '401':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '429':
+          description: Error envelope with retry_after
+  /api/v1/auth/invitations/{token}/verify:
+    post:
+      operationId: auth_invitation_verify
+      summary: 'X-12 in the invitation flow: check the code'
+      parameters:
+      - in: path
+        name: token
+        schema:
+          type: string
+        required: true
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodeRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetupToken'
+          description: ''
+        '400':
+          description: Error envelope
+        '401':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '429':
+          description: Error envelope with retry_after
+  /api/v1/auth/invitations/accept:
+    post:
+      operationId: auth_invitation_accept
+      summary: 'X-13 in the invitation flow: set a password; creates the account and
+        signs in'
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvitationAcceptRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+          description: ''
+        '400':
+          description: Error envelope
+        '401':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '429':
+          description: Error envelope with retry_after
   /api/v1/auth/login:
     post:
       operationId: auth_login
@@ -170,6 +285,121 @@ paths:
           description: Error envelope
         '429':
           description: Error envelope with retry_after
+  /api/v1/console/invitations:
+    get:
+      operationId: console_invitations_list
+      parameters:
+      - name: cursor
+        required: false
+        in: query
+        description: The pagination cursor value.
+        schema:
+          type: string
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - console
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedInvitationList'
+          description: ''
+    post:
+      operationId: console_invitations_create
+      summary: A-41 Invite a person
+      tags:
+      - console
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvitationCreateRequest'
+        required: true
+      security:
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invitation'
+          description: ''
+        '400':
+          description: Error envelope
+        '401':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '429':
+          description: Error envelope with retry_after
+  /api/v1/console/invitations/{id}/cancel:
+    post:
+      operationId: console_invitations_cancel
+      summary: A-41 Cancel an invitation
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - console
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invitation'
+          description: ''
+        '400':
+          description: Error envelope
+        '401':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '429':
+          description: Error envelope with retry_after
+  /api/v1/console/invitations/{id}/resend:
+    post:
+      operationId: console_invitations_resend
+      summary: A-41 Resend an invitation (new link, 7 more days)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - console
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invitation'
+          description: ''
+        '400':
+          description: Error envelope
+        '401':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '429':
+          description: Error envelope with retry_after
   /api/v1/health:
     get:
       operationId: health
@@ -223,6 +453,31 @@ paths:
                 items:
                   $ref: '#/components/schemas/Branch'
           description: ''
+  /api/v1/me/pin:
+    post:
+      operationId: me_pin_set
+      summary: Choose my 4-digit PIN for counter devices (first time)
+      tags:
+      - me
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PinRequest'
+        required: true
+      security:
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          description: Error envelope
+        '401':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '429':
+          description: Error envelope with retry_after
 components:
   schemas:
     Access:
@@ -244,6 +499,16 @@ components:
       required:
       - id
       - name
+    CodeRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 6
+          pattern: ^\d{6}$
+      required:
+      - code
     Health:
       type: object
       properties:
@@ -268,6 +533,108 @@ components:
       required:
       - checks
       - status
+    Invitation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        phone:
+          type: string
+          readOnly: true
+        first_name:
+          type: string
+          readOnly: true
+        last_name:
+          type: string
+          readOnly: true
+        role:
+          type: string
+          readOnly: true
+        rights:
+          allOf:
+          - $ref: '#/components/schemas/Rights'
+          readOnly: true
+        branch_ids:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+        sent_count:
+          type: integer
+          readOnly: true
+        is_open:
+          type: boolean
+          readOnly: true
+      required:
+      - branch_ids
+      - expires_at
+      - first_name
+      - id
+      - is_open
+      - last_name
+      - phone
+      - rights
+      - role
+      - sent_count
+    InvitationAcceptRequest:
+      type: object
+      properties:
+        setup_token:
+          type: string
+          minLength: 1
+          maxLength: 128
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+      required:
+      - password
+      - setup_token
+    InvitationCreateRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+          minLength: 1
+          maxLength: 32
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 60
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 60
+        role:
+          $ref: '#/components/schemas/InvitationCreateRoleEnum'
+        branch_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        rights:
+          $ref: '#/components/schemas/RightsInputRequest'
+      required:
+      - first_name
+      - last_name
+      - phone
+      - role
+    InvitationCreateRoleEnum:
+      enum:
+      - manager
+      - accountant
+      - staff
+      type: string
+      description: |-
+        * `manager` - Manager
+        * `accountant` - Accountant
+        * `staff` - Staff
     LanguageEnum:
       enum:
       - en
@@ -321,7 +688,7 @@ components:
           readOnly: true
         role:
           allOf:
-          - $ref: '#/components/schemas/RoleEnum'
+          - $ref: '#/components/schemas/MeRoleEnum'
           readOnly: true
         language:
           allOf:
@@ -347,6 +714,28 @@ components:
       - phone
       - rights
       - role
+    MeRoleEnum:
+      enum:
+      - owner
+      - manager
+      - accountant
+      - staff
+      - rider
+      - customer
+      - platform_super_admin
+      - platform_support
+      - platform_finance
+      type: string
+      description: |-
+        * `owner` - Owner
+        * `manager` - Manager
+        * `accountant` - Accountant
+        * `staff` - Staff
+        * `rider` - Rider
+        * `customer` - Customer
+        * `platform_super_admin` - Platform super admin
+        * `platform_support` - Platform support
+        * `platform_finance` - Platform finance
     Message:
       type: object
       properties:
@@ -354,6 +743,25 @@ components:
           type: string
       required:
       - message
+    PaginatedInvitationList:
+      type: object
+      required:
+      - results
+      properties:
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?cursor=cD00ODY%3D"
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?cursor=cj0xJnA9NDg3
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Invitation'
     PasswordChangeRequest:
       type: object
       properties:
@@ -377,6 +785,36 @@ components:
           maxLength: 32
       required:
       - phone
+    PinRequest:
+      type: object
+      properties:
+        pin:
+          type: string
+          minLength: 4
+          maxLength: 4
+      required:
+      - pin
+    PublicInvitation:
+      type: object
+      description: 'What X-14 shows: "{Business} invited you to join as {role}" and
+        the phone.'
+      properties:
+        business_name:
+          type: string
+        role:
+          type: string
+        role_label:
+          type: string
+        first_name:
+          type: string
+        phone:
+          type: string
+      required:
+      - business_name
+      - first_name
+      - phone
+      - role
+      - role_label
     ResetConfirmRequest:
       type: object
       properties:
@@ -412,28 +850,26 @@ components:
       - accept_cash
       - correct_prices
       - give_discounts
-    RoleEnum:
-      enum:
-      - owner
-      - manager
-      - accountant
-      - staff
-      - rider
-      - customer
-      - platform_super_admin
-      - platform_support
-      - platform_finance
-      type: string
-      description: |-
-        * `owner` - Owner
-        * `manager` - Manager
-        * `accountant` - Accountant
-        * `staff` - Staff
-        * `rider` - Rider
-        * `customer` - Customer
-        * `platform_super_admin` - Platform super admin
-        * `platform_support` - Platform support
-        * `platform_finance` - Platform finance
+    RightsInputRequest:
+      type: object
+      properties:
+        accept_cash:
+          type: boolean
+          default: false
+        give_discounts:
+          type: boolean
+          default: false
+        correct_prices:
+          type: boolean
+          default: false
+    SetupToken:
+      type: object
+      properties:
+        setup_token:
+          type: string
+          description: Single use, valid for 10 minutes.
+      required:
+      - setup_token
     StatusEnum:
       enum:
       - ok

@@ -9,5 +9,9 @@ DEBUG = env.bool("DJANGO_DEBUG", default=True)
 # own address in development: mamasafi.localhost, cleanpro.localhost.
 ALLOWED_HOSTS = [*ALLOWED_HOSTS, ".localhost", "localhost", "127.0.0.1"]
 
+# Links in SMS open the Vite dev server.
+APP_LINK_SCHEME = env("APP_LINK_SCHEME", default="http")
+APP_LINK_PORT = env("APP_LINK_PORT", default=":5173")
+
 # http://*.localhost has no TLS, so the refresh cookie can't be Secure locally.
 REFRESH_COOKIE_SECURE = env.bool("REFRESH_COOKIE_SECURE", default=False)
