@@ -12,6 +12,8 @@ urlpatterns = [
     path("t/create-then-raise", views.create_then_raise),
     path("t/create-then-503", views.create_then_503),
     path("t/create-then-400", views.create_then_400),
+    path("t/widgets/<uuid:pk>", views.widget_detail),
+    path("t/leaky-widgets/<uuid:pk>", views.widget_detail_leaky_cache),
 ]
 
 __all__ = ["handler404", "handler500", "urlpatterns"]

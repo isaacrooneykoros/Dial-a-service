@@ -29,6 +29,7 @@ ignore = [
 "**/tests/**" = ["S101", "S105", "S106"]  # asserts and fake credentials in tests
 "tests/**" = ["S101", "S105", "S106"]
 "conftest.py" = ["S101"]
+"apps/core/testing/**" = ["S101"]  # shared test helpers assert by design
 
 [tool.ruff.lint.isort]
 known-first-party = ["apps", "config"]

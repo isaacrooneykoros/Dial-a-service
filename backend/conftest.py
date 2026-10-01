@@ -27,6 +27,9 @@ from psycopg import sql
 from apps.core.testing.database import owner_connect
 from scripts.db.setup_roles import direct_host
 
+# The cross-business harness fixtures (business_a, business_b, api_client_for).
+pytest_plugins = ["apps.core.testing.tenancy"]
+
 GRANTS_SQL = Path(__file__).resolve().parent / "scripts" / "db" / "grant_privileges.sql"
 CREDENTIAL_KEYS = ("USER", "PASSWORD", "HOST", "PORT", "OPTIONS")
 
