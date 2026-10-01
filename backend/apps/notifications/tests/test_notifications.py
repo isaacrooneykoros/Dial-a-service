@@ -182,3 +182,38 @@ def test_an_event_with_no_text_in_any_language(
     monkeypatch.setitem(catalogue.EVENTS, "silent", event)
     with tenant_context(business.id), pytest.raises(LookupError, match="No sms text"):
         template_text("silent", "sw")
+
+
+class TestRequestsFromOtherApps:
+    """apps.core.messaging.request_sms: how earlier apps (accounts) send SMS."""
+
+    def test_request_becomes_a_sent_notification_and_the_code_leaves_the_event(
+        self,
+        business: Business,
+        sms_outbox: list[Any],
+        django_capture_on_commit_callbacks: Callable[..., Any],
+    ) -> None:
+        from apps.core.messaging import request_sms
+
+        with tenant_context(business.id):
+            with django_capture_on_commit_callbacks(execute=True):
+                request_sms("phone_code", to=PHONE, context=CODE_CONTEXT)
+            event = OutboxEvent.objects.get(type="notification.request")
+            notification = Notification.objects.get()
+        assert [m.text for m in sms_outbox] == [CODE_TEXT]
+        assert notification.status == Notification.Status.SENT
+        assert "482913" not in str(event.payload)
+        assert event.payload["notification_id"] == str(notification.pk)
+
+    def test_running_the_request_twice_sends_once(
+        self, business: Business, sms_outbox: list[Any]
+    ) -> None:
+        from apps.core.messaging import request_sms
+
+        with tenant_context(business.id):
+            request_sms("phone_code", to=PHONE, context=CODE_CONTEXT)
+            event = OutboxEvent.objects.get(type="notification.request")
+            handlers.create_requested_notification(event)
+            handlers.create_requested_notification(event)
+            assert Notification.objects.count() == 1
+        assert len(sms_outbox) == 1

@@ -27,14 +27,26 @@ from apps.accounts.api.serializers import (
     LoginResponseSerializer,
     LoginSerializer,
     MeSerializer,
+    MessageSerializer,
+    PasswordChangeSerializer,
+    PhoneSerializer,
+    ResetConfirmSerializer,
+    ResetTokenSerializer,
+    VerifyCodeSerializer,
 )
-from apps.accounts.api.throttling import LoginIPThrottle, LoginPhoneThrottle
+from apps.accounts.api.throttling import (
+    CodeCheckIPThrottle,
+    CodeSendIPThrottle,
+    LoginIPThrottle,
+    LoginPhoneThrottle,
+)
 from apps.accounts.models import UserSession
 from apps.accounts.phones import format_local
-from apps.accounts.services import auth
+from apps.accounts.services import auth, otp, passwords
 from apps.accounts.tokens import hash_refresh_token
 from apps.branches.selectors import branches_for_user
 from apps.core.api.errors import envelope
+from apps.core.api.exceptions import throttled_message
 from apps.tenancy.selectors import support_contact
 
 ERROR = {
@@ -147,3 +159,115 @@ class MyBranchesView(APIView):
     def get(self, request: Request) -> Response:
         branches = branches_for_user(request.user.pk)
         return Response(BranchSerializer(branches, many=True).data)
+
+
+CODE_MESSAGES = {
+    "invalid_code": _("That code isn't right. Check the SMS and try again."),
+    "code_expired": _("That code has expired. Ask for a new one."),
+    "code_locked": _("Too many wrong tries. Ask for a new code."),
+}
+
+
+def code_failure(result: otp.VerifyResult) -> Response:
+    """X-12 errors, with attempts left. Returned (not raised) so the attempt counts."""
+    body = envelope(result.reason, CODE_MESSAGES[result.reason], attempts_left=result.attempts_left)
+    return Response(body, status=400)
+
+
+def send_refused(result: otp.SendResult) -> Response:
+    message, seconds = throttled_message(result.retry_after)
+    return Response(envelope("throttled", message, retry_after=seconds), status=429)
+
+
+class PasswordResetRequestView(APIView):
+    authentication_classes: list[type[BaseAuthentication]] = []
+    permission_classes = [AllowAny]
+    throttle_classes = [CodeSendIPThrottle]
+
+    @extend_schema(
+        operation_id="auth_password_reset_request",
+        summary="X-11 Send a reset code",
+        request=PhoneSerializer,
+        responses={200: MessageSerializer, **ERROR},
+        auth=[],
+    )
+    def post(self, request: Request) -> Response:
+        serializer = PhoneSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        result = passwords.request_reset(serializer.validated_data["phone"])
+        if not result.ok:
+            return send_refused(result)
+        # X-11: the same answer whether or not the number has an account.
+        return Response({"message": _("If this number has an account, we've sent a code")})
+
+
+class PasswordResetVerifyView(APIView):
+    authentication_classes: list[type[BaseAuthentication]] = []
+    permission_classes = [AllowAny]
+    throttle_classes = [CodeCheckIPThrottle]
+
+    @extend_schema(
+        operation_id="auth_password_reset_verify",
+        summary="X-12 Check the reset code",
+        request=VerifyCodeSerializer,
+        responses={200: ResetTokenSerializer, **ERROR},
+        auth=[],
+    )
+    def post(self, request: Request) -> Response:
+        serializer = VerifyCodeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        result = passwords.verify_reset_code(**serializer.validated_data)
+        if not result.ok:
+            return code_failure(result)
+        return Response({"reset_token": result.grant})
+
+
+class PasswordResetConfirmView(APIView):
+    authentication_classes: list[type[BaseAuthentication]] = []
+    permission_classes = [AllowAny]
+    throttle_classes = [CodeCheckIPThrottle]
+
+    @extend_schema(
+        operation_id="auth_password_reset_confirm",
+        summary="X-13 Set a new password after a reset; signs in",
+        request=ResetConfirmSerializer,
+        responses={200: LoginResponseSerializer, **ERROR},
+        auth=[],
+    )
+    def post(self, request: Request) -> Response:
+        serializer = ResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            done = passwords.confirm_reset(request, **serializer.validated_data)
+        except passwords.InvalidResetError:
+            message = _("This reset has expired. Start again from Forgot password.")
+            return Response(envelope("invalid_reset_token", message), status=400)
+        signed_in = done.signed_in
+        response = Response({"access": signed_in.access, "user": MeSerializer(signed_in.user).data})
+        set_refresh_cookie(response, signed_in.refresh)
+        return response
+
+
+class PasswordChangeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        operation_id="auth_password_change",
+        summary="Change my password; signs out my other sessions",
+        request=PasswordChangeSerializer,
+        responses={204: None, **ERROR},
+    )
+    def post(self, request: Request) -> Response:
+        serializer = PasswordChangeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            passwords.change_password(
+                request, user=request.user, session=request.auth, **serializer.validated_data
+            )
+        except passwords.WrongCurrentPasswordError:
+            message = _("That isn't your current password.")
+            return Response(
+                envelope("validation_error", message, {"current_password": [message]}),
+                status=400,
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)

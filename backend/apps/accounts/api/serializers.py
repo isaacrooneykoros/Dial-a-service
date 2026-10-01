@@ -2,14 +2,68 @@
 
 from typing import Any
 
+from django.contrib.auth import password_validation
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
 from apps.accounts.models import Role, User
+from apps.accounts.phones import InvalidPhoneError, normalize_ke_phone
 
 
 class LoginSerializer(serializers.Serializer[Any]):
     phone = serializers.CharField(max_length=32, trim_whitespace=True)
     password = serializers.CharField(max_length=128, trim_whitespace=False)
+
+
+def validate_ke_phone(value: str) -> str:
+    try:
+        return normalize_ke_phone(value)
+    except InvalidPhoneError as exc:
+        raise serializers.ValidationError(
+            _("Enter a Kenyan mobile number, like 0712 345 678."), code=exc.code
+        ) from exc
+
+
+def validate_new_password(value: str) -> str:
+    try:
+        password_validation.validate_password(value)
+    except DjangoValidationError as exc:
+        raise serializers.ValidationError(list(exc.messages)) from exc
+    return value
+
+
+class PhoneSerializer(serializers.Serializer[Any]):
+    phone = serializers.CharField(max_length=32)
+
+    def validate_phone(self, value: str) -> str:
+        return validate_ke_phone(value)
+
+
+class VerifyCodeSerializer(PhoneSerializer):
+    code = serializers.RegexField(r"^\d{6}$", max_length=6)
+
+
+class ResetConfirmSerializer(serializers.Serializer[Any]):
+    reset_token = serializers.CharField(max_length=128)
+    password = serializers.CharField(
+        max_length=128, trim_whitespace=False, validators=[validate_new_password]
+    )
+
+
+class PasswordChangeSerializer(serializers.Serializer[Any]):
+    current_password = serializers.CharField(max_length=128, trim_whitespace=False)
+    new_password = serializers.CharField(
+        max_length=128, trim_whitespace=False, validators=[validate_new_password]
+    )
+
+
+class MessageSerializer(serializers.Serializer[Any]):
+    message = serializers.CharField()
+
+
+class ResetTokenSerializer(serializers.Serializer[Any]):
+    reset_token = serializers.CharField(help_text="Single use, valid for 10 minutes.")
 
 
 class RightsSerializer(serializers.Serializer[Any]):

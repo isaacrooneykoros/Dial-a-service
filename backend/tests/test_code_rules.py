@@ -74,3 +74,49 @@ def test_only_the_notification_handler_talks_to_sms_backends() -> None:
     assert not offenders, "Send SMS with send_sms(); found direct backend use in: " + ", ".join(
         offenders
     )
+
+
+# CLAUDE.md section 6.6: core <- tenancy <- branches <- accounts <- customers / catalog
+# <- orders <- payments / riders <- notifications / support / billing.
+APP_RANK = {
+    "core": 0,
+    "tenancy": 1,
+    "branches": 2,
+    "accounts": 3,
+    "customers": 4,
+    "catalog": 4,
+    "orders": 5,
+    "payments": 6,
+    "riders": 6,
+    "notifications": 7,
+    "support": 7,
+    "billing": 7,
+}
+
+
+def test_app_dependencies_point_one_way() -> None:
+    """An app may import only from apps before it in the order (tests excluded)."""
+    import ast
+
+    offenders = []
+    for app, rank in APP_RANK.items():
+        for path in (BACKEND / "apps" / app).rglob("*.py"):
+            if {"tests", "testing", "migrations"} & set(path.parts):
+                continue
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            for node in ast.walk(tree):
+                names: list[str] = []
+                if isinstance(node, ast.ImportFrom) and node.module:
+                    names = [node.module]
+                elif isinstance(node, ast.Import):
+                    names = [alias.name for alias in node.names]
+                for name in names:
+                    parts = name.split(".")
+                    if len(parts) > 1 and parts[0] == "apps" and parts[1] != app:
+                        target = parts[1]
+                        if APP_RANK.get(target, 99) >= rank:
+                            offenders.append(
+                                f"{path.relative_to(BACKEND)}:{getattr(node, 'lineno', 0)}: "
+                                f"{app} imports {target}"
+                            )
+    assert not offenders, "App imports against the dependency order:\n" + "\n".join(offenders)

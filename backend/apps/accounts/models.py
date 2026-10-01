@@ -209,3 +209,34 @@ class UserSession(TenantModel):
     @property
     def is_live(self) -> bool:
         return self.revoked_at is None and self.expires_at > timezone.now()
+
+
+class PhoneOTP(TenantModel):
+    """A 6-digit SMS code (X-12; ADR-0002 section 4), stored only as a keyed hash.
+
+    A correct code yields a short, single-use *grant* (reset_token or
+    setup_token) that the next step (X-13) spends; its hash lives here too.
+    """
+
+    class Purpose(models.TextChoices):
+        PASSWORD_RESET = "password_reset", _("Password reset")
+        INVITATION = "invitation", _("Invitation")
+
+    phone = models.CharField(max_length=16)
+    purpose = models.CharField(max_length=16, choices=Purpose.choices)
+    code_hash = models.CharField(max_length=64, editable=False)
+    expires_at = models.DateTimeField()
+    attempts = models.PositiveSmallIntegerField(default=0)
+    used_at = models.DateTimeField(null=True, blank=True)
+    invalidated_at = models.DateTimeField(null=True, blank=True)
+    grant_hash = models.CharField(max_length=64, blank=True, editable=False, db_index=True)
+    grant_expires_at = models.DateTimeField(null=True, blank=True)
+    grant_used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["business", "phone", "created_at"], name="otp_phone_time"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.purpose} code ({self.pk})"

@@ -61,7 +61,7 @@ def flatten_errors(detail: Any, prefix: str = "") -> dict[str, list[str]]:
     return {prefix or "non_field_errors": [str(detail)]}
 
 
-def _throttled_message(wait: float | None) -> tuple[str, int | None]:
+def throttled_message(wait: float | None) -> tuple[str, int | None]:
     if wait is None:
         return str(MESSAGES["service_unavailable"]), None
     seconds = max(1, math.ceil(wait))
@@ -100,7 +100,7 @@ def exception_handler(exc: Exception, context: dict[str, Any]) -> Response:
         )
 
     if isinstance(exc, exceptions.Throttled):
-        message, seconds = _throttled_message(exc.wait)
+        message, seconds = throttled_message(exc.wait)
         response.data = envelope("throttled", message, None, request_id, retry_after=seconds)
         return response
 

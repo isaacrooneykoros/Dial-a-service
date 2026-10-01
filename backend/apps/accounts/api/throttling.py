@@ -28,3 +28,11 @@ class LoginPhoneThrottle(PhoneThrottle):
 
 class LoginIPThrottle(BusinessIPThrottle):
     scope = "login_ip"
+
+
+class CodeSendIPThrottle(BusinessIPThrottle):
+    scope = "code_ip"
+
+
+class CodeCheckIPThrottle(BusinessIPThrottle):
+    scope = "code_check_ip"

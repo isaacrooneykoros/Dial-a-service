@@ -208,6 +208,8 @@ REST_FRAMEWORK = {
         "anon": "60/m",
         "login_phone": "10/15m",
         "login_ip": "30/15m",
+        "code_ip": "20/h",
+        "code_check_ip": "30/15m",
     },
 }
 
@@ -219,6 +221,9 @@ SIMPLE_JWT = {
     "USER_ID_FIELD": "id",
     "USER_ID_CLAIM": "user_id",
 }
+
+# Key for hashing SMS codes and the grants they unlock (ADR-0002 section 4).
+OTP_HASH_KEY: str = env("OTP_HASH_KEY", default=SECRET_KEY)
 
 # The refresh cookie is Secure everywhere except plain-http local development.
 REFRESH_COOKIE_SECURE: bool = env.bool("REFRESH_COOKIE_SECURE", default=True)

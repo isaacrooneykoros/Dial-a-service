@@ -43,6 +43,112 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/auth/password-reset/confirm:
+    post:
+      operationId: auth_password_reset_confirm
+      summary: X-13 Set a new password after a reset; signs in
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetConfirmRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+          description: ''
+        '400':
+          description: Error envelope
+        '401':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '429':
+          description: Error envelope with retry_after
+  /api/v1/auth/password-reset/request:
+    post:
+      operationId: auth_password_reset_request
+      summary: X-11 Send a reset code
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: ''
+        '400':
+          description: Error envelope
+        '401':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '429':
+          description: Error envelope with retry_after
+  /api/v1/auth/password-reset/verify:
+    post:
+      operationId: auth_password_reset_verify
+      summary: X-12 Check the reset code
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyCodeRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResetToken'
+          description: ''
+        '400':
+          description: Error envelope
+        '401':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '429':
+          description: Error envelope with retry_after
+  /api/v1/auth/password/change:
+    post:
+      operationId: auth_password_change
+      summary: Change my password; signs out my other sessions
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+        required: true
+      security:
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          description: Error envelope
+        '401':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '429':
+          description: Error envelope with retry_after
   /api/v1/auth/refresh:
     post:
       operationId: auth_refresh
@@ -241,6 +347,58 @@ components:
       - phone
       - rights
       - role
+    Message:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+      - message
+    PasswordChangeRequest:
+      type: object
+      properties:
+        current_password:
+          type: string
+          minLength: 1
+          maxLength: 128
+        new_password:
+          type: string
+          minLength: 1
+          maxLength: 128
+      required:
+      - current_password
+      - new_password
+    PhoneRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+          minLength: 1
+          maxLength: 32
+      required:
+      - phone
+    ResetConfirmRequest:
+      type: object
+      properties:
+        reset_token:
+          type: string
+          minLength: 1
+          maxLength: 128
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+      required:
+      - password
+      - reset_token
+    ResetToken:
+      type: object
+      properties:
+        reset_token:
+          type: string
+          description: Single use, valid for 10 minutes.
+      required:
+      - reset_token
     Rights:
       type: object
       properties:
@@ -284,6 +442,21 @@ components:
       description: |-
         * `ok` - ok
         * `degraded` - degraded
+    VerifyCodeRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+          minLength: 1
+          maxLength: 32
+        code:
+          type: string
+          minLength: 1
+          maxLength: 6
+          pattern: ^\d{6}$
+      required:
+      - code
+      - phone
   securitySchemes:
     bearerAuth:
       type: http

@@ -1,9 +1,11 @@
 """Factories for accounts. Business users must be created inside tenant_context()."""
 
+from datetime import timedelta
+
 import factory
 from django.utils import timezone
 
-from apps.accounts.models import Role, User, UserSession
+from apps.accounts.models import PhoneOTP, Role, User, UserSession
 from apps.accounts.tokens import REFRESH_TOKEN_LIFETIME, new_refresh_token
 
 TEST_PASSWORD = "correct-horse-42"
@@ -30,3 +32,13 @@ class UserSessionFactory(factory.django.DjangoModelFactory[UserSession]):
     last_seen_at = factory.LazyFunction(timezone.now)
     expires_at = factory.LazyFunction(lambda: timezone.now() + REFRESH_TOKEN_LIFETIME)
     refresh_hash = factory.LazyFunction(lambda: new_refresh_token()[1])
+
+
+class PhoneOTPFactory(factory.django.DjangoModelFactory[PhoneOTP]):
+    class Meta:
+        model = PhoneOTP
+
+    phone = "+254712345678"
+    purpose = PhoneOTP.Purpose.PASSWORD_RESET
+    code_hash = factory.LazyFunction(lambda: "0" * 64)
+    expires_at = factory.LazyFunction(lambda: timezone.now() + timedelta(minutes=10))
