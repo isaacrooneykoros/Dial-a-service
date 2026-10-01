@@ -270,6 +270,20 @@ LOGGING = {
     },
 }
 
+# --- Private file storage (ADR-0004) -------------------------------------------------
+# "local" (development and tests: files under backend/media_private, uploaded
+# through a signed Django URL) or "r2" (Cloudflare R2; required in production).
+STORAGE_BACKEND: str = env("STORAGE_BACKEND", default="local")
+STORAGE_ENDPOINT: str = env("STORAGE_ENDPOINT", default="")
+STORAGE_BUCKET: str = env("STORAGE_BUCKET", default="")
+STORAGE_ACCESS_KEY: str = env("STORAGE_ACCESS_KEY", default="")
+STORAGE_SECRET_KEY: str = env("STORAGE_SECRET_KEY", default="")
+MEDIA_PRIVATE_ROOT = BASE_DIR / "media_private"
+
+# Upload limits (owner decision D-48): photos only, resized on the phone first.
+UPLOAD_CONTENT_TYPES = ("image/jpeg", "image/png", "image/webp")
+UPLOAD_MAX_BYTES = 5 * 1024 * 1024
+
 # --- Maintenance (X-03) -----------------------------------------------------------
 # Planned downtime is platform-wide. The apps read it from /business/config and
 # show X-03 with the expected return time (ISO 8601, e.g. 2026-10-02T06:00:00+03:00).

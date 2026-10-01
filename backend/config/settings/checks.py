@@ -41,5 +41,16 @@ def validate_production(settings: Mapping[str, Any]) -> None:
     if not settings["REDIS_URL"]:
         problems.append("REDIS_URL must be set: tasks must never run inline in production.")
 
+    if settings.get("STORAGE_BACKEND") != "r2" or not all(
+        settings.get(name)
+        for name in (
+            "STORAGE_ENDPOINT",
+            "STORAGE_BUCKET",
+            "STORAGE_ACCESS_KEY",
+            "STORAGE_SECRET_KEY",
+        )
+    ):
+        problems.append("STORAGE_BACKEND must be r2, with all STORAGE_* values set.")
+
     if problems:
         raise ImproperlyConfigured("Unsafe production settings: " + " ".join(problems))

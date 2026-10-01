@@ -693,6 +693,57 @@ paths:
           description: Error envelope
         '429':
           description: Error envelope with retry_after
+  /api/v1/uploads:
+    post:
+      operationId: uploads_start
+      summary: Get a short-lived URL to upload a photo to private storage
+      tags:
+      - uploads
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartUploadRequest'
+        required: true
+      security:
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadTicket'
+          description: ''
+        '400':
+          description: Error envelope
+        '409':
+          description: Error envelope
+  /api/v1/uploads/{id}/complete:
+    post:
+      operationId: uploads_complete
+      summary: Confirm the photo arrived
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - uploads
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Upload'
+          description: ''
+        '400':
+          description: Error envelope
+        '409':
+          description: Error envelope
 components:
   schemas:
     Access:
@@ -1363,6 +1414,20 @@ components:
           description: Single use, valid for 10 minutes.
       required:
       - setup_token
+    StartUploadRequest:
+      type: object
+      properties:
+        content_type:
+          type: string
+          minLength: 1
+          maxLength: 50
+        size:
+          type: integer
+          minimum: 1
+          description: Bytes.
+      required:
+      - content_type
+      - size
     StatusEnum:
       enum:
       - ok
@@ -1371,6 +1436,47 @@ components:
       description: |-
         * `ok` - ok
         * `degraded` - degraded
+    Upload:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        content_type:
+          type: string
+        size:
+          type: integer
+        status:
+          type: string
+      required:
+      - content_type
+      - id
+      - size
+      - status
+    UploadTicket:
+      type: object
+      properties:
+        upload_id:
+          type: string
+          format: uuid
+        url:
+          type: string
+          description: PUT the file here within 5 minutes.
+        method:
+          type: string
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+        expires_at:
+          type: string
+          format: date-time
+      required:
+      - expires_at
+      - headers
+      - method
+      - upload_id
+      - url
     VerifyCodeRequest:
       type: object
       properties:

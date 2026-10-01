@@ -5,7 +5,7 @@ from datetime import timedelta
 import factory
 from django.utils import timezone
 
-from apps.core.models import AuditLog, IdempotencyKey, OutboxEvent
+from apps.core.models import AuditLog, IdempotencyKey, OutboxEvent, Upload
 from apps.core.tenant_context import peek_current_business_id
 
 
@@ -35,3 +35,12 @@ class IdempotencyKeyFactory(factory.django.DjangoModelFactory[IdempotencyKey]):
     path = "/api/v1/x"
     body_hash = "0" * 64
     expires_at = factory.LazyFunction(lambda: timezone.now() + timedelta(hours=24))
+
+
+class UploadFactory(factory.django.DjangoModelFactory[Upload]):
+    class Meta:
+        model = Upload
+
+    key = factory.Sequence(lambda n: f"test/uploads/{n:08d}.jpg")
+    content_type = "image/jpeg"
+    size = 4

@@ -241,3 +241,22 @@ class AppVersion(BaseModel):
 
     def __str__(self) -> str:
         return f"{self.app}/{self.platform} {self.minimum}..{self.latest}"
+
+
+class Upload(TenantModel):
+    """A private file uploaded straight to storage (ADR-0004). Others refer to it by ID."""
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        UPLOADED = "uploaded", "Uploaded"
+
+    key = models.CharField(max_length=255, unique=True, editable=False)
+    content_type = models.CharField(max_length=50)
+    size = models.PositiveIntegerField()
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, null=True, blank=True, related_name="+"
+    )
+
+    def __str__(self) -> str:
+        return self.key

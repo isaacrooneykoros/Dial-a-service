@@ -14,6 +14,13 @@ from config.settings.checks import require_postgres, validate_production
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 POSTGRES_URL = "postgres://dial_app:x@localhost:5432/dialaservice"
 GOOD_SECRET = "k" * 64
+R2 = {
+    "STORAGE_BACKEND": "r2",
+    "STORAGE_ENDPOINT": "https://account.r2.cloudflarestorage.com",
+    "STORAGE_BUCKET": "dial-a-service",
+    "STORAGE_ACCESS_KEY": "access",
+    "STORAGE_SECRET_KEY": "secret",
+}
 
 
 def good_production_settings(**overrides: Any) -> dict[str, Any]:
@@ -22,6 +29,7 @@ def good_production_settings(**overrides: Any) -> dict[str, Any]:
         "SECRET_KEY": GOOD_SECRET,
         "ALLOWED_HOSTS": [".dialaservice.co.ke"],
         "REDIS_URL": "rediss://default:x@redis.example:6379",
+        **R2,
     }
     settings.update(overrides)
     return settings
@@ -51,6 +59,8 @@ class TestValidateProduction:
             ({"SECRET_KEY": "change-me-to-a-long-random-string" + "x" * 40}, "DJANGO_SECRET_KEY"),
             ({"ALLOWED_HOSTS": []}, "DJANGO_ALLOWED_HOSTS"),
             ({"REDIS_URL": ""}, "REDIS_URL"),
+            ({"STORAGE_BACKEND": "local"}, "STORAGE_BACKEND"),
+            ({"STORAGE_SECRET_KEY": ""}, "STORAGE_BACKEND"),
         ],
     )
     def test_refuses_each_unsafe_value(self, overrides: dict[str, Any], message: str) -> None:
@@ -109,5 +119,6 @@ class TestSettingsModules:
             DATABASE_URL=POSTGRES_URL,
             DJANGO_ALLOWED_HOSTS=".dialaservice.co.ke",
             REDIS_URL="redis://localhost:6379/0",
+            **R2,
         )
         assert result.returncode == 0, result.stderr
