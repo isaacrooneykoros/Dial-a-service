@@ -181,6 +181,9 @@ CELERY_TASK_EAGER_PROPAGATES = True
 CELERY_TASK_ACKS_LATE = True
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_TIMEZONE = "UTC"
+CELERY_BEAT_SCHEDULE = {
+    "sweep-outbox": {"task": "apps.tenancy.tasks.sweep_outbox", "schedule": 60.0},
+}
 
 # --- API ----------------------------------------------------------------------
 

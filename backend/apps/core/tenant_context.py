@@ -66,6 +66,7 @@ def tenant_context(business_id: UUID | str, *, using: str = "default") -> Iterat
     TenantContextConflict.
     """
     business_uuid = business_id if isinstance(business_id, UUID) else UUID(str(business_id))
+    connection = connections[using]
 
     active = current_business_id.get()
     if active is not None:
@@ -73,10 +74,13 @@ def tenant_context(business_id: UUID | str, *, using: str = "default") -> Iterat
             raise TenantContextConflict(
                 f"Business {active} is active; refusing to switch to {business_uuid}."
             )
-        yield business_uuid
-        return
+        if connection.in_atomic_block:
+            yield business_uuid
+            return
+        # Same business, but its transaction has ended: this is code running in
+        # an on-commit callback (for example an eagerly run task). Start a new
+        # transaction with the setting rather than running with neither.
 
-    connection = connections[using]
     nested = connection.in_atomic_block
     token = current_business_id.set(business_uuid)
     try:

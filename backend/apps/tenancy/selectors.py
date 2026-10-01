@@ -6,7 +6,7 @@ from uuid import UUID
 
 from django.core.cache import cache
 
-from apps.tenancy.models import BusinessDomain, BusinessSetting
+from apps.tenancy.models import Business, BusinessDomain, BusinessSetting
 from apps.tenancy.settings_registry import get_spec
 
 HOST_CACHE_SECONDS = 60  # CLAUDE.md section 6.1
@@ -58,3 +58,8 @@ def get_setting(key: str) -> Any:
     spec = get_spec(key)
     row = BusinessSetting.objects.filter(key=key).values_list("value", flat=True).first()
     return spec.default if row is None else row
+
+
+def all_business_ids() -> list[UUID]:
+    """Every business ID, for platform jobs that work business by business."""
+    return list(Business.objects.order_by("created_at").values_list("id", flat=True))

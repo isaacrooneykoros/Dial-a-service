@@ -2,10 +2,12 @@
 
 import uuid
 from collections.abc import Iterable
-from typing import Any, TypeVar, cast
+from typing import Any, ClassVar, TypeVar, cast
 
+from django.conf import settings
 from django.db import models
 from django.db.models.base import ModelBase
+from django.utils import timezone
 
 from apps.core.tenant_context import TenantMismatch, get_current_business_id
 
@@ -106,3 +108,90 @@ class TenantModel(BaseModel):
                 f"{type(self).__name__} belongs to business {self.business_id}, "
                 f"but the current business is {current}."
             )
+
+
+class AuditLogManager(models.Manager["AuditLog"]):
+    """Scoped to the current business (raises without one), like TenantManager."""
+
+    def get_queryset(self) -> models.QuerySet["AuditLog"]:
+        return super().get_queryset().filter(business_id=get_current_business_id())
+
+
+class AuditLog(models.Model):
+    """Who did what, when and from where (CLAUDE.md section 6.7; A-63, P-12).
+
+    Append-only: the app roles can't UPDATE or DELETE it (MakeAppendOnly).
+    Nullable business: platform actions (P-12) belong to no business and are
+    written by the platform service. Write with apps.core.audit.record().
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    business = models.ForeignKey(
+        "tenancy.Business",
+        on_delete=models.PROTECT,
+        null=True,
+        editable=False,
+        db_index=True,
+        related_name="+",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    action = models.CharField(max_length=64)
+    object_type = models.CharField(max_length=100, blank=True)
+    object_id = models.CharField(max_length=64, blank=True)
+    before = models.JSONField(null=True, blank=True)
+    after = models.JSONField(null=True, blank=True)
+    ip = models.GenericIPAddressField(null=True, blank=True)
+    # The registered counter device (accounts.Device, T06), kept as a plain ID
+    # so core doesn't depend on accounts.
+    device_id = models.UUIDField(null=True, blank=True)
+    request_id = models.CharField(max_length=64, blank=True)
+
+    objects: ClassVar[AuditLogManager] = AuditLogManager()
+    unscoped: ClassVar[models.Manager["AuditLog"]] = models.Manager()
+
+    class Meta:
+        default_manager_name = "objects"
+        base_manager_name = "unscoped"
+        indexes = [
+            models.Index(fields=["business", "created_at"], name="auditlog_business_time"),
+            models.Index(fields=["business", "object_type", "object_id"], name="auditlog_object"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.action} {self.object_type}:{self.object_id}"
+
+
+class OutboxEvent(TenantModel):
+    """A side effect to perform after the transaction commits (CLAUDE.md section 6.4).
+
+    Written in the same transaction as the change it belongs to, so it exists
+    if and only if the change committed. The worker dispatches it to the
+    handler registered for its type (apps.core.outbox), retrying with backoff.
+    """
+
+    type = models.CharField(max_length=64)
+    payload = models.JSONField(default=dict)
+    available_at = models.DateTimeField(default=timezone.now)
+    attempts = models.PositiveIntegerField(default=0)
+    processed_at = models.DateTimeField(null=True, blank=True)
+    failed_at = models.DateTimeField(null=True, blank=True)
+    last_error = models.TextField(blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=["business", "available_at"],
+                condition=models.Q(processed_at__isnull=True, failed_at__isnull=True),
+                name="outbox_pending",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.type} ({self.pk})"

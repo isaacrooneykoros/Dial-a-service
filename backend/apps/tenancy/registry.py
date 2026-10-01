@@ -23,5 +23,5 @@ GLOBAL_MODELS: dict[str, str] = {
 
 NULLABLE_TENANT_MODELS: dict[str, str] = {
     "accounts.user": "Platform staff have no business; their rows are invisible to dial_app.",
-    # core.AuditLog joins in T07a (platform actions have no business).
+    "core.auditlog": "Platform actions (P-12) have no business; the platform service writes them.",
 }

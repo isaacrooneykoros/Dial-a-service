@@ -54,6 +54,10 @@ def set_business(business_id: object) -> None:
     run("SELECT set_config('app.business_id', %s, true)", [str(business_id) if business_id else ""])
 
 
+def can_delete(table: str) -> bool:
+    return bool(run("SELECT has_table_privilege(current_user, %s, 'DELETE')", [table])[0][0])
+
+
 def move_all_rows(table: psql.Identifier, *, to: object) -> None:
     """Try to reassign every visible row; contained in a savepoint so the test can go on."""
     with transaction.atomic():
@@ -109,7 +113,9 @@ def test_rows_cannot_be_moved_or_written_into_another_business(
     for model in tenant_models():
         table = psql.Identifier(model._meta.db_table)
         set_business(a.id)
-        with pytest.raises(DatabaseError, match="row-level security"):
+        # Append-only tables refuse UPDATE outright ("permission denied"); the rest are
+        # stopped by the policy's WITH CHECK ("row-level security").
+        with pytest.raises(DatabaseError, match=r"row-level security|permission denied"):
             move_all_rows(table, to=b.id)
 
 
@@ -128,6 +134,8 @@ def test_b_rows_cannot_be_updated_or_deleted_from_a(seeded: tuple[Business, Busi
     before = counts_for_b()
     set_business(a.id)
     for model in tenant_models():
+        if not can_delete(model._meta.db_table):
+            continue  # append-only: dial_app can't delete anything at all
         table = psql.Identifier(model._meta.db_table)
         with connection.cursor() as cursor:
             cursor.execute(

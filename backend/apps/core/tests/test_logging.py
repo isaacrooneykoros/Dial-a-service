@@ -181,3 +181,15 @@ class TestJsonFormatter:
 
     def test_output_is_one_line(self) -> None:
         assert "\n" not in JsonFormatter().format(make_record("a\nb"))
+
+
+def test_redact_keeps_phones_but_removes_secrets() -> None:
+    from apps.core.logging import redact
+
+    data = {"phone": "+254712345678", "pin": "1234", "nested": [{"token": "t", "n": 1}]}
+    assert redact(data) == {
+        "phone": "+254712345678",
+        "pin": REDACTED,
+        "nested": [{"token": REDACTED, "n": 1}],
+    }
+    assert redact("plain") == "plain"

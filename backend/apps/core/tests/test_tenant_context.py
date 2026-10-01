@@ -96,3 +96,18 @@ def test_setting_is_transaction_local_without_an_outer_transaction() -> None:
     # pooled connection reused by the next request starts with no business.
     with transaction.atomic():
         assert db_setting() is None
+
+
+@pytest.mark.django_db(transaction=True)
+def test_same_business_after_commit_gets_a_fresh_transaction() -> None:
+    """On-commit callbacks run while the business is still current but its
+    transaction has ended; re-entering must not run with no transaction."""
+    seen: list[tuple[bool, str | None]] = []
+
+    def callback() -> None:
+        with tenant_context(A):
+            seen.append((connection.in_atomic_block, db_setting()))
+
+    with tenant_context(A):
+        transaction.on_commit(callback)
+    assert seen == [(True, str(A))]

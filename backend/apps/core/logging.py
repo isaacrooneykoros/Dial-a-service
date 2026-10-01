@@ -80,6 +80,21 @@ def is_sensitive_key(key: str) -> bool:
     return any(part in _SENSITIVE_PARTS for part in _KEY_SPLIT.split(lowered))
 
 
+def redact(value: Any) -> Any:
+    """Redact sensitive keys at any depth, leaving other values as they are.
+
+    For data owners are entitled to see (audit log before/after values), where
+    phone numbers stay readable but secrets must never be stored.
+    """
+    if isinstance(value, Mapping):
+        return {
+            str(k): REDACTED if is_sensitive_key(str(k)) else redact(v) for k, v in value.items()
+        }
+    if isinstance(value, list | tuple | set | frozenset):
+        return [redact(v) for v in value]
+    return value
+
+
 def scrub(value: Any) -> Any:
     """Redact sensitive keys and mask phone numbers in any JSON-like value."""
     if isinstance(value, Mapping):

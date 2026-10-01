@@ -45,3 +45,14 @@ def test_no_session_level_settings() -> None:
         if pattern.search(line)
     ]
     assert not offenders, "\n".join(offenders)
+
+
+def test_tasks_run_inside_a_business_or_say_why_not() -> None:
+    """Tasks in apps/*/tasks.py use @tenant_task; anything else needs a platform-scope marker."""
+    offenders = []
+    for path in sorted((BACKEND / "apps").glob("*/tasks.py")):
+        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            declares_task = re.search(r"@(shared_task|app\.task|celery_app\.task)\b", line)
+            if declares_task and not re.search(r"#\s*platform-scope:\s*\S", line):
+                offenders.append(f"{path.relative_to(BACKEND)}:{number}: {line.strip()}")
+    assert not offenders, "Use @tenant_task, or mark platform jobs:\n" + "\n".join(offenders)
