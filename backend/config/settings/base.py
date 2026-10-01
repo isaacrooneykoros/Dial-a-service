@@ -31,6 +31,10 @@ PLATFORM_ROOT_DOMAIN: str = env("PLATFORM_ROOT_DOMAIN", default="dialaservice.co
 PLATFORM_ADMIN_HOST: str = env("PLATFORM_ADMIN_HOST", default=f"admin.{PLATFORM_ROOT_DOMAIN}")
 ALLOWED_HOSTS: list[str] = env.list("DJANGO_ALLOWED_HOSTS", default=[])
 
+# Paths that answer on any host, with no business (ADR-0001 section 1). Keep
+# this list tiny: tests/test_code_rules.py fails if anything else is added.
+TENANCY_EXEMPT_PATHS: tuple[str, ...] = ("/api/v1/health",)
+
 # --- Applications -------------------------------------------------------------
 
 # django.contrib.auth is added in M1 task T05a together with the custom
@@ -67,6 +71,10 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 MIDDLEWARE = [
     "apps.core.request_id.RequestIDMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    # The business comes from the host; unknown hosts stop here with a 404.
+    # Then the rest of the request runs in that business's transaction.
+    "apps.tenancy.middleware.TenantResolutionMiddleware",
+    "apps.tenancy.middleware.TenantTransactionMiddleware",
     # Accept-Language picks English or Swahili for messages (design doc "API contract").
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",

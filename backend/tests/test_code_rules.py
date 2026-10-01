@@ -28,3 +28,20 @@ def test_unscoped_manager_is_always_marked_platform_scope() -> None:
             if ".unscoped" in line and not re.search(r"#\s*platform-scope:\s*\S", line):
                 offenders.append(f"{path.relative_to(BACKEND)}:{number}: {line.strip()}")
     assert not offenders, "Mark platform-only queries:\n" + "\n".join(offenders)
+
+
+def test_no_session_level_settings() -> None:
+    """The business setting is always transaction-local: set_config(..., true).
+
+    Session-level SET would leak to the next user of a pooled connection
+    (CLAUDE.md section 6.1). scripts/ is excluded: its one-off admin connection
+    sets role passwords at session level, never the business.
+    """
+    pattern = re.compile(r"\bSET\s+(SESSION\s+)?app\.|set_config\([^)]*app\.business_id[^)]*false")
+    offenders = [
+        f"{path.relative_to(BACKEND)}:{number}"
+        for path in python_files()
+        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1)
+        if pattern.search(line)
+    ]
+    assert not offenders, "\n".join(offenders)
