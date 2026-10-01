@@ -1,15 +1,17 @@
-"""Businesses and their web addresses.
+"""Businesses, their web addresses, branding and settings.
 
-Both models are global (no business column, no RLS): the host lookup has to
-find the business before any business is in context. They are listed in
-apps/tenancy/registry.py.
+Business and BusinessDomain are global (no business column, no RLS): the host
+lookup has to find the business before any business is in context. They are
+listed in apps/tenancy/registry.py. BusinessBranding and BusinessSetting are
+ordinary tenant models with row-level security.
 """
 
 from django.db import models
 from django.db.models.functions import Lower
 from django.utils.translation import gettext_lazy as _
 
-from apps.core.models import BaseModel
+from apps.core.models import BaseModel, TenantModel
+from apps.tenancy.colors import validate_hex_color, validate_primary_color
 from apps.tenancy.validators import SLUG_MAX_LENGTH, validate_business_slug, validate_host
 
 
@@ -75,3 +77,48 @@ class BusinessDomain(BaseModel):
 
     def __str__(self) -> str:
         return self.host
+
+
+class BusinessBranding(TenantModel):
+    """What a business can brand (10-screens-shared.md): name, logo, colours,
+    support contacts, legal links and SMS sender ID. One per business.
+
+    Defaults are the proposed Dial A Service tokens (OPEN.md D-07).
+    """
+
+    app_name = models.CharField(max_length=60)
+    logo_url = models.URLField(blank=True)
+    primary_color = models.CharField(
+        max_length=7, default="#0F6B5C", validators=[validate_primary_color]
+    )
+    accent_color = models.CharField(
+        max_length=7, default="#F2A900", validators=[validate_hex_color]
+    )
+    support_phone = models.CharField(max_length=16, blank=True)
+    whatsapp_phone = models.CharField(max_length=16, blank=True)
+    terms_url = models.URLField(blank=True)
+    privacy_url = models.URLField(blank=True)
+    sms_sender_id = models.CharField(max_length=11, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["business"], name="one_branding_per_business"),
+        ]
+
+    def __str__(self) -> str:
+        return self.app_name
+
+
+class BusinessSetting(TenantModel):
+    """One typed setting value for one business; keys are declared in settings_registry."""
+
+    key = models.CharField(max_length=64)
+    value = models.JSONField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["business", "key"], name="one_value_per_setting"),
+        ]
+
+    def __str__(self) -> str:
+        return self.key

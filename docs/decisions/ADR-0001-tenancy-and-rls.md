@@ -58,10 +58,12 @@ class TenantModel(BaseModel):          # BaseModel: UUID pk, created_at, updated
   ALTER TABLE t ENABLE ROW LEVEL SECURITY;
   ALTER TABLE t FORCE ROW LEVEL SECURITY;
   CREATE POLICY tenant_isolation ON t
-    USING (business_id = current_setting('app.business_id', true)::uuid)
-    WITH CHECK (business_id = current_setting('app.business_id', true)::uuid);
+    USING (business_id = NULLIF(current_setting('app.business_id', true), '')::uuid)
+    WITH CHECK (business_id = NULLIF(current_setting('app.business_id', true), '')::uuid);
   ```
-  It reverses cleanly (drop the policy, disable RLS). When no business is set, `current_setting(..., true)` returns NULL and the policy matches nothing, so the query sees zero rows instead of all of them.
+  It reverses cleanly (drop the policy, disable RLS). When no business is set, the policy matches nothing, so the query sees zero rows instead of all of them.
+
+  **Why `NULLIF` (owner-approved 2026-10-01):** once a connection has used a transaction-local `app.business_id`, Postgres reports the unset value as `''` rather than NULL for the rest of that session. A plain `::uuid` cast would then raise on reused (pooled) connections but match nothing on fresh ones. `NULLIF(..., '')` makes it consistent: with no business, zero rows, always. Layer 1 still fails loudly before any such query is sent.
 - `MakeAppendOnly("modelname")`: `REVOKE UPDATE, DELETE ON t FROM dial_app, dial_platform`. Used for `AuditLog` and `ConsentRecord` in M1, and later for `OrderStatusEvent`, `LedgerEntry` and `SmsTransaction`. This backs "never edit or delete" with the database, not just code.
 
 ### 5. Database roles

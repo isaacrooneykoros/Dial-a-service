@@ -5,6 +5,10 @@ migrated as dial_owner, exactly like production, so tables are owned by the
 owner and row-level security is forced. Every test then runs as dial_app, the
 role the API uses, so RLS is really exercised.
 
+Order matters, as in production: the database is created and its default
+privileges are set *before* any migration, so every table gets the app grants
+from the default privileges and no blanket grant can undo MakeAppendOnly.
+
 Tests connect to Neon's direct host (not the pooler): pooled server connections
 would outlive the test run and stop the test database from being dropped.
 """
@@ -17,8 +21,10 @@ import environ
 import pytest
 from django.conf import settings
 from django.db import connections
-from django.test.utils import setup_databases, teardown_databases
+from django.test.utils import setup_databases
+from psycopg import sql
 
+from apps.core.testing.database import owner_connect
 from scripts.db.setup_roles import direct_host
 
 GRANTS_SQL = Path(__file__).resolve().parent / "scripts" / "db" / "grant_privileges.sql"
@@ -42,6 +48,31 @@ def _use(credentials: dict[str, Any]) -> None:
             connection.settings_dict[key] = value
 
 
+def _prepare_test_database(main_db: str, test_db: str, *, keep: bool) -> None:
+    """Create the test database (fresh unless keeping it) and set its privileges."""
+    with owner_connect(main_db) as conn:
+        exists = conn.execute("SELECT 1 FROM pg_database WHERE datname = %s", (test_db,)).fetchone()
+        if exists and not keep:
+            conn.execute(sql.SQL("DROP DATABASE {}").format(sql.Identifier(test_db)))
+            exists = None
+        if not exists:
+            conn.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(test_db)))
+    with owner_connect(test_db) as conn:
+        conn.execute(GRANTS_SQL.read_text(encoding="utf-8"))
+        # Test database only: transactional tests (django_db(transaction=True))
+        # empty every table afterwards with TRUNCATE, which dial_app is never
+        # granted in real databases.
+        conn.execute(
+            "ALTER DEFAULT PRIVILEGES FOR ROLE dial_owner IN SCHEMA public "
+            "GRANT TRUNCATE ON TABLES TO dial_app"
+        )
+
+
+def _drop_test_database(main_db: str, test_db: str) -> None:
+    with owner_connect(main_db) as conn:
+        conn.execute(sql.SQL("DROP DATABASE IF EXISTS {}").format(sql.Identifier(test_db)))
+
+
 @pytest.fixture(scope="session")
 def django_db_setup(
     request: pytest.FixtureRequest,
@@ -54,25 +85,22 @@ def django_db_setup(
 
     app = _credentials(settings.DATABASE_APP_URL)
     owner = _credentials(settings.DATABASE_MIGRATION_URL)
+    connection = connections["default"]
+    main_db = connection.settings_dict["NAME"]
+    test_db = connection.settings_dict.get("TEST", {}).get("NAME") or f"test_{main_db}"
 
     with django_db_blocker.unblock():
+        _prepare_test_database(main_db, test_db, keep=django_db_keepdb)
         _use(owner)
-        old_config = setup_databases(
-            verbosity=request.config.option.verbose,
-            interactive=False,
-            keepdb=django_db_keepdb,
-        )
-        with connections["default"].cursor() as cursor:
-            cursor.execute(GRANTS_SQL.read_text(encoding="utf-8"))
-            # Test database only: transactional tests (django_db(transaction=True))
-            # empty every table afterwards with TRUNCATE, which dial_app is never
-            # granted in real databases.
-            cursor.execute("GRANT TRUNCATE ON ALL TABLES IN SCHEMA public TO dial_app")
+        # keepdb=True: Django reuses the database just prepared and migrates it.
+        setup_databases(verbosity=request.config.option.verbose, interactive=False, keepdb=True)
         _use(app)
 
     yield
 
     with django_db_blocker.unblock():
         _use(owner)
+        connection.settings_dict["NAME"] = main_db
+        connection.close()
         if not django_db_keepdb:
-            teardown_databases(old_config, verbosity=request.config.option.verbose)
+            _drop_test_database(main_db, test_db)

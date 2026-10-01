@@ -67,11 +67,15 @@ def test_bulk_create_fills_and_guards_the_business(a: Business, b: Business) -> 
             Widget.objects.bulk_create([Widget(name="z", business_id=b.id)])
 
 
-def test_unscoped_manager_sees_every_business(a: Business, b: Business) -> None:
+def test_unscoped_manager_is_still_limited_by_rls_for_dial_app(a: Business, b: Business) -> None:
+    """Skipping layer 1 doesn't skip layer 2: as dial_app, row-level security
+    still limits the unscoped manager. Only dial_platform sees every business."""
     for business in (a, b):
         with tenant_context(business.id):
             Widget.objects.create(name="w")
-    assert Widget.unscoped.count() == 2  # platform-scope: test of the platform manager
+    assert Widget.unscoped.count() == 0  # platform-scope: shows RLS without a business
+    with tenant_context(a.id):
+        assert Widget.unscoped.count() == 1  # platform-scope: shows RLS still applies
 
 
 def test_business_field_is_not_editable() -> None:
