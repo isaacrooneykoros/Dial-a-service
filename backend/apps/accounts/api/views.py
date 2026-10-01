@@ -18,6 +18,7 @@ from rest_framework.views import APIView
 
 from apps.accounts.api.cookies import (
     clear_refresh_cookie,
+    read_device_cookie,
     read_refresh_cookie,
     set_refresh_cookie,
 )
@@ -42,7 +43,7 @@ from apps.accounts.api.throttling import (
 )
 from apps.accounts.models import UserSession
 from apps.accounts.phones import format_local
-from apps.accounts.services import auth, otp, passwords
+from apps.accounts.services import auth, devices, otp, passwords, pin_switch
 from apps.accounts.tokens import hash_refresh_token
 from apps.branches.selectors import branches_for_user
 from apps.core.api.errors import envelope
@@ -79,8 +80,11 @@ class LoginView(APIView):
     def post(self, request: Request) -> Response:
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        # Signing in on a registered counter device ties the session to it, and a
+        # manager or owner signing in on a locked device unlocks it (D-37).
+        device = devices.device_from_token(read_device_cookie(request._request))
         try:
-            signed_in = auth.login(request, **serializer.validated_data)
+            signed_in = auth.login(request, device=device, **serializer.validated_data)
         except auth.InvalidCredentialsError:
             # X-10: always this message, never saying which part was wrong.
             message = _("Phone number or password is incorrect")
@@ -89,6 +93,8 @@ class LoginView(APIView):
             message = suspended_message(exc.user.business_id)
             return Response(envelope("account_suspended", message), status=403)
 
+        if device is not None:
+            pin_switch.unlock_on_sign_in(device, signed_in.user, request=request)
         body = {"access": signed_in.access, "user": MeSerializer(signed_in.user).data}
         response = Response(body)
         set_refresh_cookie(response, signed_in.refresh)

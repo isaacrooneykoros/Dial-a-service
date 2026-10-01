@@ -195,3 +195,48 @@ class CurrentDeviceSerializer(serializers.Serializer[Any]):
     device = DeviceSerializer()
     locked = serializers.BooleanField()
     roster = RosterEntrySerializer(many=True)
+
+
+class PinSwitchSerializer(serializers.Serializer[Any]):
+    user_id = serializers.UUIDField()
+    pin = serializers.CharField(max_length=4, min_length=4, trim_whitespace=False)
+
+
+class SessionPersonSerializer(serializers.Serializer[Any]):
+    id = serializers.UUIDField()
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    role = serializers.CharField()
+
+
+class SessionDeviceSerializer(serializers.Serializer[Any]):
+    id = serializers.UUIDField()
+    name = serializers.CharField()
+
+
+class SessionSerializer(serializers.Serializer[Any]):
+    """A-42: every signed-in session per person (device, browser, last active)."""
+
+    id = serializers.UUIDField()
+    user = SessionPersonSerializer()
+    kind = serializers.CharField()
+    device = SessionDeviceSerializer(allow_null=True)
+    user_agent = serializers.CharField()
+    created_at = serializers.DateTimeField()
+    last_seen_at = serializers.DateTimeField()
+    is_current = serializers.SerializerMethodField()
+
+    def get_is_current(self, session: Any) -> bool:
+        current = self.context.get("current_session_id")
+        return current is not None and str(session.pk) == str(current)
+
+
+class ConsoleDeviceSerializer(serializers.Serializer[Any]):
+    """A-42: registered counter devices (name, branch, registered by, last used)."""
+
+    id = serializers.UUIDField()
+    name = serializers.CharField()
+    branch = BranchSerializer()
+    status = serializers.CharField()
+    registered_by = SessionPersonSerializer()
+    last_seen_at = serializers.DateTimeField(allow_null=True)

@@ -63,14 +63,19 @@ def _start_session(
     return SignedIn(user=user, session=session, access=access, refresh=raw)
 
 
-def login(request: HttpRequest | None, *, phone: str, password: str) -> SignedIn:
-    """Phone and password; raises InvalidCredentialsError or AccountSuspendedError."""
+def login(
+    request: HttpRequest | None, *, phone: str, password: str, device: Any = None
+) -> SignedIn:
+    """Phone and password; raises InvalidCredentialsError or AccountSuspendedError.
+
+    ``device`` is the registered counter device the sign-in happens on, if any.
+    """
     user = authenticate(request, phone=phone, password=password)
     if not isinstance(user, User):
         raise InvalidCredentialsError
     if not user.is_active:
         raise AccountSuspendedError(user)
-    signed_in = _start_session(user, request, UserSession.Kind.PASSWORD)
+    signed_in = _start_session(user, request, UserSession.Kind.PASSWORD, device=device)
     user.last_login = timezone.now()
     user.save(update_fields=["last_login"])
     audit.record("auth.login", obj=signed_in.session, actor=user, request=request)

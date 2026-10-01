@@ -49,6 +49,19 @@ urlpatterns = [
     path("me/pin", inv.MyPinView.as_view(), name="me-pin"),
     path("staff/devices", device_views.DeviceRegisterView.as_view(), name="devices-register"),
     path("devices/current", device_views.CurrentDeviceView.as_view(), name="devices-current"),
+    path("auth/pin-switch", device_views.PinSwitchView.as_view(), name="auth-pin-switch"),
+    path("console/sessions", device_views.ConsoleSessionsView.as_view(), name="console-sessions"),
+    path(
+        "console/sessions/<uuid:pk>/sign-out",
+        device_views.ConsoleSessionSignOutView.as_view(),
+        name="console-session-sign-out",
+    ),
+    path("console/devices", device_views.ConsoleDevicesView.as_view(), name="console-devices"),
+    path(
+        "console/devices/<uuid:pk>/remove",
+        device_views.ConsoleDeviceRemoveView.as_view(),
+        name="console-device-remove",
+    ),
     path("me", views.MeView.as_view(), name="me"),
     path("me/branches", views.MyBranchesView.as_view(), name="me-branches"),
 ]

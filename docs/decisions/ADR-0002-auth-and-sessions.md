@@ -98,7 +98,7 @@ All paths are under `/api/v1`. POSTs follow the idempotency rules in §8.
 | `GET /devices/current` | X-15: device, branch, lock state and roster, identified by the device cookie |
 | `POST /auth/pin-switch` | X-15 |
 | `GET /console/sessions` | List sessions (owner and manager) |
-| `POST /console/sessions/{id}/revoke` | Sign a session out |
+| `POST /console/sessions/{id}/sign-out` | Sign a session out (as built: named after A-42's "Sign out") |
 | `GET /console/devices` | List registered devices |
 | `POST /console/devices/{id}/remove` | Remove a device |
 

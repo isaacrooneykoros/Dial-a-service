@@ -36,3 +36,7 @@ class CodeSendIPThrottle(BusinessIPThrottle):
 
 class CodeCheckIPThrottle(BusinessIPThrottle):
     scope = "code_check_ip"
+
+
+class PinSwitchIPThrottle(BusinessIPThrottle):
+    scope = "pin_ip"

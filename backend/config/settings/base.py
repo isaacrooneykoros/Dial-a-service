@@ -210,6 +210,7 @@ REST_FRAMEWORK = {
         "login_ip": "30/15m",
         "code_ip": "20/h",
         "code_check_ip": "30/15m",
+        "pin_ip": "30/15m",
     },
 }
 
