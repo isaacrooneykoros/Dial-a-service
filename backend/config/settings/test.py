@@ -12,6 +12,8 @@ PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 
 CELERY_BROKER_URL = "memory://"
+
+SMS_BACKEND = "apps.notifications.backends.LocmemSmsBackend"
 CELERY_TASK_ALWAYS_EAGER = True
 
 # A test-only app with a tenant model (tests/testapp).

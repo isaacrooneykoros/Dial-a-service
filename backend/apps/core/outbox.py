@@ -15,9 +15,11 @@ must be safe to repeat (the notifications app records what it already sent).
 """
 
 from collections.abc import Callable
+from datetime import datetime
 from typing import Any
 
 from django.db import transaction
+from django.utils import timezone
 
 from apps.core.models import OutboxEvent
 from apps.core.tenant_context import get_current_business_id
@@ -36,10 +38,22 @@ def register_handler(event_type: str) -> Callable[[Handler], Handler]:
     return decorator
 
 
-def emit(event_type: str, payload: dict[str, Any] | None = None) -> OutboxEvent:
-    """Record an event for the current business; dispatch it once the transaction commits."""
+def emit(
+    event_type: str,
+    payload: dict[str, Any] | None = None,
+    *,
+    available_at: datetime | None = None,
+) -> OutboxEvent:
+    """Record an event for the current business; dispatch it once the transaction commits.
+
+    With ``available_at`` in the future, the event waits for the sweeper instead.
+    """
     business_id = get_current_business_id()
-    event: OutboxEvent = OutboxEvent.objects.create(type=event_type, payload=payload or {})
+    event: OutboxEvent = OutboxEvent.objects.create(
+        type=event_type, payload=payload or {}, available_at=available_at or timezone.now()
+    )
+    if available_at is not None and available_at > timezone.now():
+        return event
 
     def enqueue() -> None:
         from apps.core.tasks import dispatch_outbox

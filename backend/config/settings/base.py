@@ -230,6 +230,11 @@ LOGGING = {
     },
 }
 
+# --- Notifications ------------------------------------------------------------
+# Development prints SMS to the terminal. The real gateway backend arrives with
+# the gateway decision (OPEN.md D-08). TODO(decision): sms-gateway
+SMS_BACKEND: str = env("SMS_BACKEND", default="apps.notifications.backends.ConsoleSmsBackend")
+
 # --- Error tracking -----------------------------------------------------------
 
 SENTRY_DSN: str = env("SENTRY_DSN", default="")

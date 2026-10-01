@@ -56,3 +56,21 @@ def test_tasks_run_inside_a_business_or_say_why_not() -> None:
             if declares_task and not re.search(r"#\s*platform-scope:\s*\S", line):
                 offenders.append(f"{path.relative_to(BACKEND)}:{number}: {line.strip()}")
     assert not offenders, "Use @tenant_task, or mark platform jobs:\n" + "\n".join(offenders)
+
+
+def test_only_the_notification_handler_talks_to_sms_backends() -> None:
+    """SMS leave only through the outbox (CLAUDE.md section 6.4)."""
+    allowed = {
+        BACKEND / "apps" / "notifications" / "handlers.py",
+        BACKEND / "apps" / "notifications" / "backends.py",
+    }
+    offenders = [
+        str(path.relative_to(BACKEND))
+        for path in python_files()
+        if path not in allowed
+        and "tests" not in path.parts
+        and "get_sms_backend" in path.read_text(encoding="utf-8")
+    ]
+    assert not offenders, "Send SMS with send_sms(); found direct backend use in: " + ", ".join(
+        offenders
+    )
