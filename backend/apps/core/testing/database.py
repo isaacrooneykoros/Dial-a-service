@@ -32,6 +32,15 @@ def owner_connect(database: str) -> psycopg.Connection[Any]:
     return connect_as(settings.DATABASE_MIGRATION_URL, database)
 
 
+def platform_connect(database: str) -> psycopg.Connection[Any]:
+    """dial_platform (BYPASSRLS), autocommit: for platform-only rows such as platform staff."""
+    if not settings.PLATFORM_DATABASE_URL:
+        raise RuntimeError(
+            "PLATFORM_DATABASE_URL must be set (scripts/db/setup_roles.py writes it)."
+        )
+    return connect_as(settings.PLATFORM_DATABASE_URL, database)
+
+
 def app_connect(database: str, *, autocommit: bool = True) -> psycopg.Connection[Any]:
     """A second, independent dial_app connection."""
     return connect_as(settings.DATABASE_APP_URL, database, autocommit=autocommit)

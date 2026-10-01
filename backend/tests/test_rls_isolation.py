@@ -16,16 +16,19 @@ from psycopg import sql as psql
 from apps.core.models import TenantModel
 from apps.core.tenant_context import tenant_context
 from apps.tenancy.models import Business
+from apps.tenancy.registry import NULLABLE_TENANT_MODELS
 from apps.tenancy.tests.factories import BusinessFactory
 
 pytestmark = pytest.mark.django_db
 
 
-def tenant_models() -> list[type[TenantModel]]:
+def tenant_models() -> list[type[models.Model]]:
+    """TenantModels plus nullable-tenant models such as accounts.User."""
     return [
         model
         for model in apps.get_models()
-        if issubclass(model, TenantModel) and model._meta.managed
+        if model._meta.managed
+        and (issubclass(model, TenantModel) or model._meta.label_lower in NULLABLE_TENANT_MODELS)
     ]
 
 
@@ -112,6 +115,17 @@ def test_rows_cannot_be_moved_or_written_into_another_business(
 
 def test_b_rows_cannot_be_updated_or_deleted_from_a(seeded: tuple[Business, Business]) -> None:
     a, b = seeded
+
+    def counts_for_b() -> dict[str, int]:
+        set_business(b.id)
+        return {
+            model._meta.db_table: run(
+                psql.SQL("SELECT count(*) FROM {}").format(psql.Identifier(model._meta.db_table))
+            )[0][0]
+            for model in tenant_models()
+        }
+
+    before = counts_for_b()
     set_business(a.id)
     for model in tenant_models():
         table = psql.Identifier(model._meta.db_table)
@@ -123,7 +137,5 @@ def test_b_rows_cannot_be_updated_or_deleted_from_a(seeded: tuple[Business, Busi
                 [b.id],
             )
             assert cursor.rowcount == 0, f"{model._meta.db_table}: deleted B's rows from A"
-    set_business(b.id)
-    for model in tenant_models():
-        table = psql.Identifier(model._meta.db_table)
-        assert run(psql.SQL("SELECT count(*) FROM {}").format(table)) == [(1,)]
+    assert counts_for_b() == before
+    assert all(count > 0 for count in before.values())

@@ -52,6 +52,7 @@ When a decision is made, move it to "Decided" with the date and who decided, and
 | D-44 | Cancellation and redelivery fees (C-28, R-18 "open cancellation decision") | M9 | Open |
 | D-45 | Staff profile photos for X-15 (no field or upload screen); M1 shows initials | M3 | Open |
 | D-46 | QR code on S-44 likely needs a frontend dependency outside `CLAUDE.md` §4 | M3 | Open |
+| D-50 | `BranchMember.role`: the data model lists a role per branch membership, but nothing says how it differs from the person's own role (`User.role`). M1 leaves it out; adding it later is additive | M5 | Open |
 
 ## Decided
 

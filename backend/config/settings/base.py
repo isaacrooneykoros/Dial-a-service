@@ -37,11 +37,13 @@ TENANCY_EXEMPT_PATHS: tuple[str, ...] = ("/api/v1/health",)
 
 # --- Applications -------------------------------------------------------------
 
-# django.contrib.auth is added in M1 task T05a together with the custom
-# accounts.User and AUTH_USER_MODEL, so no migration ever depends on Django's
-# default user table (kickoff T05; docs/plans/M1.md T01b).
+# django.contrib.auth arrived in T05a together with accounts.User, so no
+# migration ever depended on Django's default user table. Django admin (and the
+# session tables it needs) belongs to the platform-admin service and is added
+# in T12.
 DJANGO_APPS = [
     "django.contrib.contenttypes",
+    "django.contrib.auth",
     "django.contrib.staticfiles",
 ]
 
@@ -114,6 +116,9 @@ DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 require_postgres(DATABASES["default"]["ENGINE"])
 
 DATABASE_MIGRATION_URL: str = env("DATABASE_MIGRATION_URL", default="")
+# The platform role's URL (dial_platform, BYPASSRLS). Only the platform-admin
+# service uses it as its DATABASE_URL; the API reads it here only in tests.
+PLATFORM_DATABASE_URL: str = env("PLATFORM_DATABASE_URL", default="")
 # The dial_app URL, kept as a string so the test harness can switch roles.
 DATABASE_APP_URL: str = env("DATABASE_URL")
 # The migration connection is direct (not pooled) and may keep server-side state.
@@ -121,6 +126,28 @@ if USE_MIGRATION_DB:
     DATABASES["default"]["OPTIONS"].pop("prepare_threshold", None)
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# --- Users and passwords (ADR-0002 section 1) ----------------------------------
+
+AUTH_USER_MODEL = "accounts.User"
+AUTHENTICATION_BACKENDS = ["apps.accounts.backends.BusinessPhoneBackend"]
+
+# Exactly the X-13 checklist: at least 8 characters, not only numbers, not a
+# common password.
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {"min_length": 8},
+    },
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+]
+
+SILENCED_SYSTEM_CHECKS = [
+    # auth.W004: USERNAME_FIELD (phone) isn't globally unique. It's unique per
+    # business; BusinessPhoneBackend looks users up within the current business.
+    "auth.W004",
+]
 
 # --- Internationalisation -----------------------------------------------------
 

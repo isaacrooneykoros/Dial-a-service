@@ -16,8 +16,12 @@ GLOBAL_MODELS: dict[str, str] = {
     "tenancy.business": "Host resolution must find the business before any is in context.",
     "tenancy.businessdomain": "Host resolution reads it before a business is in context.",
     "contenttypes.contenttype": "Django's model registry; holds no business data.",
+    "auth.permission": "Django's permission catalogue; no business data, unused by the API.",
+    "auth.group": "Django's groups; no business data, unused (roles are fixed per user).",
+    "auth.group_permissions": "Link table between the two above; no business data.",
 }
 
 NULLABLE_TENANT_MODELS: dict[str, str] = {
-    # Filled from M1 T05a (accounts.User) and T07a (core.AuditLog).
+    "accounts.user": "Platform staff have no business; their rows are invisible to dial_app.",
+    # core.AuditLog joins in T07a (platform actions have no business).
 }
