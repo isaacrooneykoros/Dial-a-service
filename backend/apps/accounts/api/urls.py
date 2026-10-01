@@ -1,7 +1,7 @@
 from django.urls import path
 
+from apps.accounts.api import device_views, views
 from apps.accounts.api import invitation_views as inv
-from apps.accounts.api import views
 
 urlpatterns = [
     path("auth/login", views.LoginView.as_view(), name="auth-login"),
@@ -47,6 +47,8 @@ urlpatterns = [
         name="invitation-cancel",
     ),
     path("me/pin", inv.MyPinView.as_view(), name="me-pin"),
+    path("staff/devices", device_views.DeviceRegisterView.as_view(), name="devices-register"),
+    path("devices/current", device_views.CurrentDeviceView.as_view(), name="devices-current"),
     path("me", views.MeView.as_view(), name="me"),
     path("me/branches", views.MyBranchesView.as_view(), name="me-branches"),
 ]

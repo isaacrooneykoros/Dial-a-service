@@ -118,7 +118,7 @@ All paths are under `/api/v1`. POSTs follow the idempotency rules in §8.
 ### 7. Registered devices and PIN switching
 
 - `Device(TenantModel)` has branch, name, registered_by, status (`active`, `locked`, `removed`), failed_pin_attempts, locked_at, last_seen_at and token_hash.
-- **Registering (S-02):** only an owner or manager who is a member of that branch can register a device. The server:
+- **Registering (S-02):** an owner can register a device for any branch; a manager only for a branch they work at (as built in T06a: the design doc gives owners "everything in their business"). The server:
   - sets an `HttpOnly` cookie `das_device` (`Path=/api/v1`, `SameSite=Strict`, one year) holding a random 256-bit token stored hashed; JavaScript can never read it;
   - revokes the manager's own session on that device, as S-02 requires, leaving the device on X-15.
 - **Roster (X-15):** `GET /devices/current` lists active users with a PIN who are members of the device's branch and have role `owner`, `manager` or `staff`. It shows names and initials; photos are D-45.

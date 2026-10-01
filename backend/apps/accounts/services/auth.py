@@ -42,12 +42,15 @@ class AccountSuspendedError(Exception):
         self.user = user
 
 
-def _start_session(user: User, request: HttpRequest | None, kind: str) -> SignedIn:
+def _start_session(
+    user: User, request: HttpRequest | None, kind: str, *, device: Any = None
+) -> SignedIn:
     raw, hashed = new_refresh_token()
     now = timezone.now()
     session = UserSession.objects.create(
         user=user,
         kind=kind,
+        device=device,
         user_agent=(request.META.get("HTTP_USER_AGENT", "") if request else "")[:255],
         ip=client_ip(request),
         last_seen_at=now,

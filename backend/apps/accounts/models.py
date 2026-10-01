@@ -188,6 +188,11 @@ class UserSession(TenantModel):
 
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
     kind = models.CharField(max_length=8, choices=Kind.choices, default=Kind.PASSWORD)
+    # The registered counter device this session runs on (PIN sessions, and the
+    # session of the manager who registered or unlocked it).
+    device = models.ForeignKey(
+        "Device", on_delete=models.PROTECT, null=True, blank=True, related_name="+"
+    )
     user_agent = models.CharField(max_length=255, blank=True)
     ip = models.GenericIPAddressField(null=True, blank=True)
     last_seen_at = models.DateTimeField()
@@ -330,3 +335,32 @@ class ConsentRecord(TenantModel):
 
     def __str__(self) -> str:
         return f"{self.document} {self.version}"
+
+
+class Device(TenantModel):
+    """A shared counter phone or tablet registered to a branch (S-02, X-15; ADR-0002 section 7).
+
+    It is identified by a random token in the httpOnly ``das_device`` cookie,
+    stored here only as a hash. Five wrong PINs lock it until a manager or owner
+    signs in on it.
+    """
+
+    class Status(models.TextChoices):
+        ACTIVE = "active", _("Active")
+        LOCKED = "locked", _("Locked")
+        REMOVED = "removed", _("Removed")
+
+    branch = models.ForeignKey("branches.Branch", on_delete=models.PROTECT, related_name="+")
+    name = models.CharField(max_length=60)
+    registered_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+    status = models.CharField(max_length=8, choices=Status.choices, default=Status.ACTIVE)
+    failed_pin_attempts = models.PositiveSmallIntegerField(default=0)
+    locked_at = models.DateTimeField(null=True, blank=True)
+    last_seen_at = models.DateTimeField(null=True, blank=True)
+    token_hash = models.CharField(max_length=64, unique=True, editable=False)
+
+    class Meta:
+        indexes = [models.Index(fields=["business", "branch", "status"], name="device_branch")]
+
+    def __str__(self) -> str:
+        return self.name

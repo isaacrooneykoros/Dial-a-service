@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from apps.accounts.models import (
     ConsentRecord,
+    Device,
     Invitation,
     InvitationBranch,
     PhoneOTP,
@@ -80,3 +81,13 @@ class ConsentRecordFactory(factory.django.DjangoModelFactory[ConsentRecord]):
     user = factory.SubFactory(UserFactory)
     document = "terms"
     version = "1"
+
+
+class DeviceFactory(factory.django.DjangoModelFactory[Device]):
+    class Meta:
+        model = Device
+
+    branch = factory.SubFactory("apps.branches.tests.factories.BranchFactory")
+    name = factory.Sequence(lambda n: f"Counter tablet {n}")
+    registered_by = factory.SubFactory(UserFactory, role=Role.MANAGER)
+    token_hash = factory.Sequence(lambda n: f"d{n:063d}")

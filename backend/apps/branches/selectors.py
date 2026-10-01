@@ -21,3 +21,8 @@ def branches_by_ids(branch_ids: Iterable[Any]) -> list[Branch]:
 
 def member_branch_ids(user_id: Any) -> set[Any]:
     return set(BranchMember.objects.filter(user_id=user_id).values_list("branch_id", flat=True))
+
+
+def member_user_ids(branch_id: Any) -> list[Any]:
+    """People who work at a branch (the X-15 roster draws from these)."""
+    return list(BranchMember.objects.filter(branch_id=branch_id).values_list("user_id", flat=True))

@@ -400,6 +400,28 @@ paths:
           description: Error envelope
         '429':
           description: Error envelope with retry_after
+  /api/v1/devices/current:
+    get:
+      operationId: devices_current
+      description: Identified by the das_device cookie, not by a signed-in person.
+      summary: X-15 This device, its branch, lock state and who can switch in
+      tags:
+      - devices
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentDevice'
+          description: ''
+        '400':
+          description: Error envelope
+        '401':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '429':
+          description: Error envelope with retry_after
   /api/v1/health:
     get:
       operationId: health
@@ -478,6 +500,35 @@ paths:
           description: Error envelope
         '429':
           description: Error envelope with retry_after
+  /api/v1/staff/devices:
+    post:
+      operationId: staff_devices_register
+      summary: S-02 Register this device (signs you out of it)
+      tags:
+      - staff
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceRegisterRequest'
+        required: true
+      security:
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+          description: ''
+        '400':
+          description: Error envelope
+        '401':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '429':
+          description: Error envelope with retry_after
 components:
   schemas:
     Access:
@@ -509,6 +560,52 @@ components:
           pattern: ^\d{6}$
       required:
       - code
+    CurrentDevice:
+      type: object
+      properties:
+        device:
+          $ref: '#/components/schemas/Device'
+        locked:
+          type: boolean
+        roster:
+          type: array
+          items:
+            $ref: '#/components/schemas/RosterEntry'
+      required:
+      - device
+      - locked
+      - roster
+    Device:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        branch:
+          $ref: '#/components/schemas/Branch'
+        status:
+          type: string
+      required:
+      - branch
+      - id
+      - name
+      - status
+    DeviceRegisterRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: For example "Front counter tablet".
+          maxLength: 60
+        branch_id:
+          type: string
+          format: uuid
+      required:
+      - branch_id
+      - name
     Health:
       type: object
       properties:
@@ -862,6 +959,26 @@ components:
         correct_prices:
           type: boolean
           default: false
+    RosterEntry:
+      type: object
+      description: X-15 shows first name and surname initial ("Wanjiru K."); never
+        phone numbers.
+      properties:
+        id:
+          type: string
+          format: uuid
+        first_name:
+          type: string
+        last_initial:
+          type: string
+          readOnly: true
+        role:
+          type: string
+      required:
+      - first_name
+      - id
+      - last_initial
+      - role
     SetupToken:
       type: object
       properties:

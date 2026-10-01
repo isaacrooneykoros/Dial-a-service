@@ -165,3 +165,33 @@ class InvitationAcceptSerializer(serializers.Serializer[Any]):
 
 class PinSerializer(serializers.Serializer[Any]):
     pin = serializers.CharField(max_length=4, min_length=4, trim_whitespace=False)
+
+
+class DeviceRegisterSerializer(serializers.Serializer[Any]):
+    name = serializers.CharField(max_length=60, help_text='For example "Front counter tablet".')
+    branch_id = serializers.UUIDField()
+
+
+class DeviceSerializer(serializers.Serializer[Any]):
+    id = serializers.UUIDField()
+    name = serializers.CharField()
+    branch = BranchSerializer()
+    status = serializers.CharField()
+
+
+class RosterEntrySerializer(serializers.Serializer[Any]):
+    """X-15 shows first name and surname initial ("Wanjiru K."); never phone numbers."""
+
+    id = serializers.UUIDField()
+    first_name = serializers.CharField()
+    last_initial = serializers.SerializerMethodField()
+    role = serializers.CharField()
+
+    def get_last_initial(self, user: User) -> str:
+        return user.last_name[:1].upper()
+
+
+class CurrentDeviceSerializer(serializers.Serializer[Any]):
+    device = DeviceSerializer()
+    locked = serializers.BooleanField()
+    roster = RosterEntrySerializer(many=True)
