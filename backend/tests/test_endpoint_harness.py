@@ -1,5 +1,6 @@
 """The cross-business harness catches leaks and is used by every endpoint module (M1 T04d)."""
 
+import re
 from pathlib import Path
 
 import pytest
@@ -60,8 +61,10 @@ def test_every_endpoint_test_module_uses_the_harness() -> None:
     missing = [
         str(path.relative_to(BACKEND))
         for path in modules
-        if "assert_cross_business_404" not in path.read_text(encoding="utf-8")
+        if not re.search(r"\bassert_cross_business_\w+\(", path.read_text(encoding="utf-8"))
     ]
-    assert not missing, "Add a cross-business test (assert_cross_business_404) to:\n" + "\n".join(
-        missing
+    assert not missing, (
+        "Add a cross-business test (assert_cross_business_404, or "
+        "assert_cross_business_token_rejected for endpoints without objects) to:\n"
+        + "\n".join(missing)
     )

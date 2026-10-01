@@ -12,8 +12,10 @@ from typing import Any, ClassVar
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.db import models
 from django.db.models.base import ModelBase
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from apps.core.models import TenantModel
 from apps.core.tenant_context import TenantMismatch, get_current_business_id
 
 
@@ -169,3 +171,41 @@ class User(AbstractBaseUser):
             raise TenantMismatch(
                 f"User belongs to business {assigned}, but the current business is {current}."
             )
+
+
+class UserSession(TenantModel):
+    """One signed-in device or browser for one person (ADR-0002 section 3; A-42).
+
+    The refresh token is random and stored only as a SHA-256 hash. It rotates on
+    every use; presenting the previous one again (a sign of theft) revokes the
+    session. Access tokens carry this session's ID and stop working the moment
+    it is revoked.
+    """
+
+    class Kind(models.TextChoices):
+        PASSWORD = "password", _("Password")
+        PIN = "pin", _("PIN")
+
+    user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+    kind = models.CharField(max_length=8, choices=Kind.choices, default=Kind.PASSWORD)
+    user_agent = models.CharField(max_length=255, blank=True)
+    ip = models.GenericIPAddressField(null=True, blank=True)
+    last_seen_at = models.DateTimeField()
+    expires_at = models.DateTimeField()
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    revoke_reason = models.CharField(max_length=32, blank=True)
+    refresh_hash = models.CharField(max_length=64, unique=True, editable=False)
+    previous_refresh_hash = models.CharField(max_length=64, blank=True, editable=False)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["business", "user", "revoked_at"], name="session_user_active"),
+            models.Index(fields=["previous_refresh_hash"], name="session_previous_refresh"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.kind} session {self.pk}"
+
+    @property
+    def is_live(self) -> bool:
+        return self.revoked_at is None and self.expires_at > timezone.now()

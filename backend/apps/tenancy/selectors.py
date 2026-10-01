@@ -6,7 +6,7 @@ from uuid import UUID
 
 from django.core.cache import cache
 
-from apps.tenancy.models import Business, BusinessDomain, BusinessSetting
+from apps.tenancy.models import Business, BusinessBranding, BusinessDomain, BusinessSetting
 from apps.tenancy.settings_registry import get_spec
 
 HOST_CACHE_SECONDS = 60  # CLAUDE.md section 6.1
@@ -63,3 +63,12 @@ def get_setting(key: str) -> Any:
 def all_business_ids() -> list[UUID]:
     """Every business ID, for platform jobs that work business by business."""
     return list(Business.objects.order_by("created_at").values_list("id", flat=True))
+
+
+def support_contact(business_id: UUID) -> tuple[str, str]:
+    """The name customers and staff know the business by, and its support phone (E.164 or "")."""
+    branding = BusinessBranding.objects.values_list("app_name", "support_phone").first()
+    if branding is not None and branding[0]:
+        return branding[0], branding[1]
+    name = Business.objects.filter(pk=business_id).values_list("name", flat=True).first()
+    return name or "", ""

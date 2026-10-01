@@ -4,6 +4,66 @@ info:
   version: 1.0.0
   description: One API for every business; the business comes from the host.
 paths:
+  /api/v1/auth/login:
+    post:
+      operationId: auth_login
+      summary: X-10 Log in
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+          description: ''
+        '400':
+          description: Error envelope
+        '401':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '429':
+          description: Error envelope with retry_after
+  /api/v1/auth/logout:
+    post:
+      operationId: auth_logout
+      summary: Sign out this device
+      tags:
+      - auth
+      security:
+      - bearerAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/v1/auth/refresh:
+    post:
+      operationId: auth_refresh
+      summary: Rotate the refresh cookie and get a new access token
+      tags:
+      - auth
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Access'
+          description: ''
+        '400':
+          description: Error envelope
+        '401':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '429':
+          description: Error envelope with retry_after
   /api/v1/health:
     get:
       operationId: health
@@ -25,8 +85,59 @@ paths:
               schema:
                 $ref: '#/components/schemas/HealthDegraded'
           description: ''
+  /api/v1/me:
+    get:
+      operationId: me
+      summary: The signed-in person
+      tags:
+      - me
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+          description: ''
+  /api/v1/me/branches:
+    get:
+      operationId: me_branches
+      summary: S-01 Branches I work at
+      tags:
+      - me
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Branch'
+          description: ''
 components:
   schemas:
+    Access:
+      type: object
+      properties:
+        access:
+          type: string
+          description: Access token (15 minutes). Keep it in memory only.
+      required:
+      - access
+    Branch:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+      required:
+      - id
+      - name
     Health:
       type: object
       properties:
@@ -51,6 +162,120 @@ components:
       required:
       - checks
       - status
+    LanguageEnum:
+      enum:
+      - en
+      - sw
+      type: string
+      description: |-
+        * `en` - English
+        * `sw` - Kiswahili
+    LoginRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+          minLength: 1
+          maxLength: 32
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+      required:
+      - password
+      - phone
+    LoginResponse:
+      type: object
+      properties:
+        access:
+          type: string
+          description: Access token (15 minutes). Keep it in memory only.
+        user:
+          $ref: '#/components/schemas/Me'
+      required:
+      - access
+      - user
+    Me:
+      type: object
+      description: The signed-in person. Read-only; a plain serializer so no queries
+        run to build it.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        phone:
+          type: string
+          readOnly: true
+        first_name:
+          type: string
+          readOnly: true
+        last_name:
+          type: string
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          readOnly: true
+        language:
+          allOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          readOnly: true
+        is_phone_verified:
+          type: boolean
+          readOnly: true
+        rights:
+          allOf:
+          - $ref: '#/components/schemas/Rights'
+          readOnly: true
+        has_pin:
+          type: boolean
+          readOnly: true
+      required:
+      - first_name
+      - has_pin
+      - id
+      - is_phone_verified
+      - language
+      - last_name
+      - phone
+      - rights
+      - role
+    Rights:
+      type: object
+      properties:
+        accept_cash:
+          type: boolean
+        give_discounts:
+          type: boolean
+        correct_prices:
+          type: boolean
+      required:
+      - accept_cash
+      - correct_prices
+      - give_discounts
+    RoleEnum:
+      enum:
+      - owner
+      - manager
+      - accountant
+      - staff
+      - rider
+      - customer
+      - platform_super_admin
+      - platform_support
+      - platform_finance
+      type: string
+      description: |-
+        * `owner` - Owner
+        * `manager` - Manager
+        * `accountant` - Accountant
+        * `staff` - Staff
+        * `rider` - Rider
+        * `customer` - Customer
+        * `platform_super_admin` - Platform super admin
+        * `platform_support` - Platform support
+        * `platform_finance` - Platform finance
     StatusEnum:
       enum:
       - ok
@@ -59,3 +284,9 @@ components:
       description: |-
         * `ok` - ok
         * `degraded` - degraded
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token from /auth/login or /auth/refresh (15 minutes).

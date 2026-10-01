@@ -1,8 +1,10 @@
 """Factories for accounts. Business users must be created inside tenant_context()."""
 
 import factory
+from django.utils import timezone
 
-from apps.accounts.models import Role, User
+from apps.accounts.models import Role, User, UserSession
+from apps.accounts.tokens import REFRESH_TOKEN_LIFETIME, new_refresh_token
 
 TEST_PASSWORD = "correct-horse-42"
 
@@ -18,3 +20,13 @@ class UserFactory(factory.django.DjangoModelFactory[User]):
     role = Role.STAFF
     is_phone_verified = True
     password = factory.django.Password(TEST_PASSWORD)
+
+
+class UserSessionFactory(factory.django.DjangoModelFactory[UserSession]):
+    class Meta:
+        model = UserSession
+
+    user = factory.SubFactory(UserFactory)
+    last_seen_at = factory.LazyFunction(timezone.now)
+    expires_at = factory.LazyFunction(lambda: timezone.now() + REFRESH_TOKEN_LIFETIME)
+    refresh_hash = factory.LazyFunction(lambda: new_refresh_token()[1])

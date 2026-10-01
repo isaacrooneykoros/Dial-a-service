@@ -5,6 +5,7 @@ environment variable through django-environ (CLAUDE.md section 6.7). A local
 ``backend/.env`` file is read if present; real environment variables win.
 """
 
+from datetime import timedelta
 from pathlib import Path
 
 import environ
@@ -194,12 +195,33 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "apps.core.api.exceptions.exception_handler",
     "DEFAULT_PAGINATION_CLASS": "apps.core.api.pagination.DefaultCursorPagination",
     "PAGE_SIZE": 20,
-    # Authentication arrives in T05b; until then nothing is authenticated and
-    # DRF must not touch django.contrib.auth.
-    "DEFAULT_AUTHENTICATION_CLASSES": [],
-    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
-    "UNAUTHENTICATED_USER": None,
+    # Signed-in by default; public endpoints opt out explicitly (ADR-0002).
+    "DEFAULT_AUTHENTICATION_CLASSES": ["apps.accounts.authentication.SessionTokenAuthentication"],
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
+    # Keyed by business plus user or IP (ADR-0002 section 9; owner-approved D-48).
+    "DEFAULT_THROTTLE_CLASSES": [
+        "apps.core.api.throttling.BusinessUserThrottle",
+        "apps.core.api.throttling.BusinessAnonThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "user": "300/m",
+        "anon": "60/m",
+        "login_phone": "10/15m",
+        "login_ip": "30/15m",
+    },
 }
+
+# Access tokens (ADR-0002 section 3). Refresh tokens are ours, not simplejwt's.
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "SIGNING_KEY": SECRET_KEY,
+    "ALGORITHM": "HS256",
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+}
+
+# The refresh cookie is Secure everywhere except plain-http local development.
+REFRESH_COOKIE_SECURE: bool = env.bool("REFRESH_COOKIE_SECURE", default=True)
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Dial A Service API",

@@ -6,6 +6,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 api_v1: list[URLPattern | URLResolver] = [
     path("", include("apps.core.api.urls")),
+    path("", include("apps.accounts.api.urls")),
 ]
 
 urlpatterns: list[URLPattern | URLResolver] = [

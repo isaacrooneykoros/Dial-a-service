@@ -9,7 +9,12 @@ from django.db import connection
 from django.http import HttpRequest, JsonResponse
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers
-from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.decorators import (
+    api_view,
+    authentication_classes,
+    permission_classes,
+    throttle_classes,
+)
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -71,6 +76,7 @@ def check_redis() -> str:
 @api_view(["GET"])
 @authentication_classes([])
 @permission_classes([AllowAny])
+@throttle_classes([])
 def health(request: Request) -> Response:
     checks = {"database": check_database(), "redis": check_redis()}
     healthy = all(value != ERROR for value in checks.values())

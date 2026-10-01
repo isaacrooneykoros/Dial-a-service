@@ -76,6 +76,16 @@ def _drop_test_database(main_db: str, test_db: str) -> None:
         conn.execute(sql.SQL("DROP DATABASE IF EXISTS {}").format(sql.Identifier(test_db)))
 
 
+@pytest.fixture(autouse=True)
+def _fresh_cache() -> Iterator[None]:
+    """Throttle counters and host lookups live in the cache; start every test clean."""
+    from django.core.cache import cache
+
+    cache.clear()
+    yield
+    cache.clear()
+
+
 @pytest.fixture(scope="session")
 def django_db_setup(
     request: pytest.FixtureRequest,
