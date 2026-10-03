@@ -2,7 +2,7 @@
 
 All notable changes, grouped by milestone. Updated at the end of each milestone.
 
-## Milestone 1: Foundation (in progress)
+## Milestone 1: Foundation (complete 2026-10-03; staging configured, not deployed; report in `docs/plans/M1-report.md`)
 
 ### Added
 
