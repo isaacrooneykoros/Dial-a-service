@@ -16,7 +16,7 @@ from apps.notifications.backends import ConsoleSmsBackend, LocmemSmsBackend
 from apps.notifications.models import Notification, NotificationTemplate
 from apps.notifications.services import render, send_sms, template_text
 from apps.tenancy.models import Business
-from apps.tenancy.tests.factories import BusinessFactory
+from apps.tenancy.tests.factories import BusinessDomainFactory, BusinessFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -70,6 +70,48 @@ class TestCatalogueWording:
     def test_unknown_event(self, business: Business) -> None:
         with tenant_context(business.id), pytest.raises(KeyError, match="Unknown"):
             template_text("nope", "en")
+
+
+class TestAutomaticCodeFill:
+    """D-51: code messages end with the WebOTP line Android Chrome reads."""
+
+    def test_code_messages_end_with_the_web_address_and_code(self) -> None:
+        domain = BusinessDomainFactory(host="mamasafi.dialaservice.co.ke")
+        with tenant_context(domain.business_id):
+            text = render("phone_code", "en", CODE_CONTEXT)
+        assert text == f"{CODE_TEXT}\n\n@mamasafi.dialaservice.co.ke #482913"
+        assert text.splitlines()[-1] == "@mamasafi.dialaservice.co.ke #482913"
+        assert len(text) <= 160
+
+    def test_a_business_template_still_gets_the_line(self) -> None:
+        domain = BusinessDomainFactory(host="mamasafi.localhost")
+        with tenant_context(domain.business_id):
+            NotificationTemplate.objects.create(
+                event="phone_code", language="en", body="{code} ni nambari yako ya {business}."
+            )
+            assert render("phone_code", "en", CODE_CONTEXT) == (
+                "482913 ni nambari yako ya Mama Safi.\n\n@mamasafi.localhost #482913"
+            )
+
+    def test_the_stored_copy_masks_the_code_in_the_line_too(self) -> None:
+        domain = BusinessDomainFactory(host="mamasafi.localhost")
+        with tenant_context(domain.business_id):
+            text = render("phone_code", "en", CODE_CONTEXT, masked=True)
+        assert "482913" not in text
+        assert text.endswith("@mamasafi.localhost #••••")
+
+    def test_other_messages_have_no_line(self) -> None:
+        domain = BusinessDomainFactory(host="mamasafi.localhost")
+        context = {"business": "Mama Safi", "role": "Shop staff", "link": "https://x/i/abc"}
+        with tenant_context(domain.business_id):
+            assert "@mamasafi.localhost" not in render("invitation", "en", context)
+
+    def test_templates_leave_room_for_the_line(self) -> None:
+        with pytest.raises(ValidationError):
+            NotificationTemplate(
+                event="phone_code", language="en", body="{code} " + "x" * 104
+            ).clean()
+        NotificationTemplate(event="phone_code", language="en", body="{code} " + "x" * 100).clean()
 
 
 class TestTemplateValidation:

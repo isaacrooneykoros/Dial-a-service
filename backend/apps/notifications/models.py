@@ -7,7 +7,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.models import TenantModel
-from apps.notifications.catalogue import EVENTS, SMS, SMS_MAX_LENGTH
+from apps.notifications.catalogue import EVENTS, SMS, max_template_length
 
 
 def template_placeholders(body: str) -> set[str]:
@@ -50,12 +50,10 @@ class NotificationTemplate(TenantModel):
                     % {"names": ", ".join(sorted(unknown))}
                 }
             )
-        if self.channel == SMS and len(self.body) > SMS_MAX_LENGTH:
+        limit = max_template_length(event)
+        if self.channel == SMS and len(self.body) > limit:
             raise ValidationError(
-                {
-                    "body": _("Keep it within %(n)d characters so it costs one SMS.")
-                    % {"n": SMS_MAX_LENGTH}
-                }
+                {"body": _("Keep it within %(n)d characters so it costs one SMS.") % {"n": limit}}
             )
 
 

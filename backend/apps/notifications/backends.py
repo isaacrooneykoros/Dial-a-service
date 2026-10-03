@@ -51,3 +51,13 @@ class LocmemSmsBackend:
 def get_sms_backend() -> SmsBackend:
     backend: SmsBackend = import_string(settings.SMS_BACKEND)()
     return backend
+
+
+class DiscardSmsBackend:
+    """Staging until the SMS gateway is chosen (OPEN.md D-08): nothing is sent,
+    printed or kept, so codes never reach a log. Messages show as sent."""
+
+    _ids = itertools.count(1)
+
+    def send(self, to: str, text: str) -> SentSms:
+        return SentSms(to=to, text="", message_id=f"discarded-{next(self._ids)}")

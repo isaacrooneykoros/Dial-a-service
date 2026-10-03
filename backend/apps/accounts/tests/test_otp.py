@@ -12,6 +12,7 @@ from django.utils import timezone
 from apps.accounts.models import PhoneOTP
 from apps.accounts.services import otp
 from apps.core.tenant_context import tenant_context
+from apps.core.testing.tenancy import host_of
 from apps.notifications.backends import LocmemSmsBackend
 from apps.tenancy.models import Business
 
@@ -49,9 +50,10 @@ def test_the_code_arrives_by_sms_through_the_outbox(
 ) -> None:
     assert send(business_a, django_capture_on_commit_callbacks).ok
     assert sms[-1].to == PHONE
-    assert sms[-1].text.endswith(
-        " is your Business-A code. It expires in 10 minutes. Never share it."
-    )
+    lines = sms[-1].text.splitlines()
+    assert lines[0].endswith(" is your Business-A code. It expires in 10 minutes. Never share it.")
+    # D-51: the last line lets Android fill the code in by itself (WebOTP).
+    assert lines[-1] == f"@{host_of(business_a)} #{code_from(sms)}"
     with tenant_context(business_a.id):
         stored = PhoneOTP.objects.get()
     assert code_from(sms) not in stored.code_hash  # only a hash is kept

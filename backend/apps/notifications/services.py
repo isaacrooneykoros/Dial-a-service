@@ -10,8 +10,10 @@ is sent until that transaction commits; then the worker renders and sends it
 from typing import Any
 
 from apps.core.outbox import emit
+from apps.core.tenant_context import get_current_business_id
 from apps.notifications.catalogue import FALLBACK_LANGUAGE, SMS, get_event
 from apps.notifications.models import Notification, NotificationTemplate
+from apps.tenancy.selectors import primary_host
 
 NOTIFICATION_SEND = "notification.send"
 MASK = "••••"
@@ -42,7 +44,25 @@ def render(event_key: str, language: str, context: dict[str, Any], *, masked: bo
         name: (MASK if masked and name in event.sensitive else str(context[name]))
         for name in event.placeholders
     }
-    return template_text(event_key, language).format_map(values)
+    text = template_text(event_key, language).format_map(values)
+    if event.webotp_code:
+        text = with_webotp_line(text, values[event.webotp_code])
+    return text
+
+
+def with_webotp_line(text: str, code: str) -> str:
+    """Add the line Android Chrome reads to fill the code in by itself (WebOTP).
+
+    It must be the last line and name the web address the code is typed on:
+    "@mamasafi.dialaservice.co.ke #123456". A business without an address (only
+    in tests) gets the message without it.
+    """
+    business_id = get_current_business_id()
+    try:
+        host = primary_host(business_id) if business_id else ""
+    except LookupError:
+        host = ""
+    return f"{text}\n\n@{host} #{code}" if host else text
 
 
 def send_sms(

@@ -1,7 +1,7 @@
 // X-15 Switch user (11-staff-app.md): on a registered device, the branch's people by
 // first name and surname initial; tap a name and enter a 4-digit PIN. 5 wrong PINs
 // lock the device until a manager (or the owner) signs in on it with a password (D-37).
-// Photos wait for D-45; M1 shows initials.
+// M1 shows initials; staff photos replace them in M3 (D-45).
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Users } from "lucide-react";
 import { useEffect, useState } from "react";

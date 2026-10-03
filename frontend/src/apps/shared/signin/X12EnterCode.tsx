@@ -75,9 +75,9 @@ export function X12EnterCode({
     verify.mutate(value);
   }
 
-  // Android Chrome can read the code from the SMS (WebOTP). It needs a line in the
-  // SMS that the catalogue text doesn't have yet (OPEN.md D-51); until then the
-  // keyboard offers the code instead (autocomplete="one-time-code").
+  // Android Chrome reads the code from the SMS (WebOTP): code messages end with
+  // "@{this web address} #{code}" (D-51). Elsewhere the keyboard offers the code
+  // instead (autocomplete="one-time-code").
   const fromSms = useEffectEvent((value: string) => {
     setCode(value);
     submit(value);
