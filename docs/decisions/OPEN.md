@@ -75,3 +75,11 @@ When a decision is made, move it to "Decided" with the date and who decided, and
 | D-49 | Added auth endpoints not in the design doc list: `password-reset/verify`, invitation `send-code`/`verify`, `/me/pin`, `/devices/current` | 2026-10-01 | Owner (approved with ADRs and M1 plan) |
 | D-45 | Staff have profile photos, shown on X-15 instead of initials. Built in M3, which also settles where a photo is taken or uploaded (the specs don't say) | 2026-10-03 | Owner |
 | D-51 | Code SMS end with the WebOTP line (`@{business web address} #{code}`) so Android fills the code in by itself. It's added after the catalogue text (and after a business's own template), so the wording itself is unchanged | 2026-10-03 | Owner |
+| D-53 | VAT: a VAT-registered business starts at 16% (changeable). VAT is on the laundry total after the discount (and on the delivery fee from M9). Prices including VAT show "of which VAT"; prices excluding VAT add it on top; non-registered businesses show no VAT line | 2026-10-03 | Owner (M2 plan Q1) |
+| D-54 | A flat modifier (e.g. Express +KSh 200) is added once per order. Percentage modifiers apply per line and add up (50% + 10% = 60%), not compounded | 2026-10-03 | Owner (M2 plan Q2) |
+| D-55 | A modifier applies to a chosen list of services; a new modifier defaults to all services | 2026-10-03 | Owner (M2 plan Q3) |
+| D-56 | A discount (percent or amount, reason required) comes off the laundry total after modifiers, before VAT; it is capped at the business's maximum discount %, which is 0% (no discounts) until the owner sets it | 2026-10-03 | Owner (M2 plan Q4) |
+| D-57 | Template list for new businesses: Wash and fold, Wash and iron (per kg); Ironing only, Duvets, Blankets, Suits, Curtains (per item); Shoes (per pair). Categories Wash and Special items. All unpriced and switched off | 2026-10-03 | Owner (M2 plan Q5) |
+| D-58 | Units for per-item services: item, pair, set. Per kg always shows kg | 2026-10-03 | Owner (M2 plan Q6) |
+| D-59 | `/business/config` (public) lists active, priced services and modifiers; price history, inactive services and branch overrides are signed-in only | 2026-10-03 | Owner (M2 plan Q7) |
+| D-60 | Owners and managers edit the catalogue and prices; accountants can't; staff and riders see prices only through quotes and config | 2026-10-03 | Owner (M2 plan Q8) |

@@ -47,11 +47,13 @@ TENANCY_EXEMPT_PATHS: tuple[str, ...] = ("/api/v1/health",)
 
 # django.contrib.auth arrived in T05a together with accounts.User, so no
 # migration ever depended on Django's default user table. Django admin (and the
-# session tables it needs) belongs to the platform-admin service and is added
-# in T12.
+# session tables it needs) belongs to the platform-admin service and arrives in
+# M6 with its 2FA (D-35). django.contrib.postgres provides the exclusion
+# constraint that keeps price versions from overlapping (M2 T01).
 DJANGO_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.auth",
+    "django.contrib.postgres",
     "django.contrib.staticfiles",
 ]
 
