@@ -5,6 +5,7 @@
 // httpOnly cookie on /api/v1/auth, so JavaScript never sees it; a page reload gets a
 // new access token through a silent refresh (X-01).
 import { ApiError } from "@/api/errors";
+import { appForPath, loginPathForApp } from "@/lib/apps";
 
 export const REFRESH_URL = "/api/v1/auth/refresh";
 
@@ -76,12 +77,9 @@ async function doRefresh(): Promise<boolean> {
 
 // --- Session expired ----------------------------------------------------------------
 
-const AREAS_WITH_OWN_LOGIN = ["staff", "console", "rider"] as const;
-
-/** The log-in page (X-10) for the area a path belongs to. */
+/** The log-in page (X-10) of the app a path belongs to. */
 export function loginPathFor(pathname: string): string {
-  const area = pathname.split("/")[1] ?? "";
-  return (AREAS_WITH_OWN_LOGIN as readonly string[]).includes(area) ? `/${area}/login` : "/login";
+  return loginPathForApp(appForPath(pathname));
 }
 
 /**

@@ -133,3 +133,10 @@ Pinned exactly in `frontend/package.json` and `package-lock.json`.
 - **Helpers the approved tools need (owner-approved):** `@vitejs/plugin-react`, `@tailwindcss/vite`, `@hookform/resolvers`, `jsdom`, `@testing-library/jest-dom`, `@testing-library/user-event`, `typescript-eslint`, `eslint-plugin-react-hooks`, `@types/react`, `@types/react-dom`, `@types/node` (types for the Vite config).
 - **TypeScript 5.9.3, not 7.x:** typescript-eslint 8.71 supports TypeScript below 6.1, and openapi-typescript 7.13 needs 5.x. Revisit when both support 7.
 - **Node 22.22.2 or newer (still Node 22 LTS):** React Router 8 and jsdom 30 require it. `.nvmrc` pins 22.23.2; CI uses that.
+
+## Start-up as built (T09d, 2026-10-03)
+
+- **One check per app:** the codebase serves three apps plus the console (00-design-doc.md, "Frontend"), so X-01 asks `GET /app/version?app={staff|console|rider|customer}&platform=web` instead of one `web` app. Each app can be forced to update on its own. Public order pages count as the customer app and skip the silent refresh. Later Android builds send `platform=android`.
+- The platform admin is Django admin on its own host (`admin.dialaservice.co.ke`) and is not part of this build.
+- **Order of checks:** X-02 (update required) comes before X-03 (maintenance), and both come before the app opens. An address no business uses shows X-04, with no home button.
+- **Cached config:** stored in `localStorage` under the business's own subdomain, so it never crosses businesses. It's used when the config request fails for any reason other than 404.

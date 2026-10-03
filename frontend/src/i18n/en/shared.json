@@ -33,5 +33,29 @@
     "minutes_other": "Too many attempts. Try again in {{count}} minutes.",
     "seconds_one": "Too many attempts. Try again in {{count}} second.",
     "seconds_other": "Too many attempts. Try again in {{count}} seconds."
+  },
+  "X-01": {
+    "cant_connect": {
+      "title": "Can't connect",
+      "body": "Check your internet connection and try again."
+    }
+  },
+  "X-02": {
+    "title": "This version needs an update to keep working",
+    "button": {
+      "update": "Update now"
+    }
+  },
+  "X-03": {
+    "title": "We're doing planned maintenance",
+    "back_at": "We expect to be back at {{time}} on {{date}}.",
+    "back_soon": "We'll be back soon.",
+    "continues": "This page carries on by itself when we're back."
+  },
+  "X-04": {
+    "title": "We couldn't find that",
+    "button": {
+      "home": "Back to home"
+    }
   }
 }
