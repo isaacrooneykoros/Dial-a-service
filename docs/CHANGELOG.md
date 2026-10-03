@@ -41,6 +41,14 @@ All notable changes, grouped by milestone. Updated at the end of each milestone.
   - **Frontend:** `api:gen` must leave the client unchanged; typecheck, lint, Prettier, tests, build and the first-load budget.
   - **Dependency audit:** `pip-audit` (CI only, pinned in `requirements/audit.txt`) and `npm audit`.
   - `scripts/migrate.sh` is executable in git. The repository is on GitHub (private).
+- CI fixes (T11): every run generates and masks its own database passwords (nothing password-like is committed, after GitGuardian flagged the throwaway ones); the test harness handles database URLs without a query string (CI's), which had failed every database test at setup.
+- Automatic code fill (D-51): code SMS end with "@{business web address} #{code}" so Android fills X-12 in by itself. The line goes after the catalogue text and after any business template, and templates keep room for it within one SMS.
+- Staging configuration (T12, written, not deployed):
+  - **`render.yaml`:** API, worker with schedules, platform admin, and a private Redis. The platform admin serves only the health check until M6.
+  - **Migrations:** a manual "Migrate staging" GitHub workflow runs them as `dial_owner`, so no Render service holds the owner role's password (owner decision).
+  - **`docs/ops/deploy.md`:** Neon staging branch and roles, the GitHub environment, R2, secrets, Render, Cloudflare Pages and the first staging business.
+  - **Settings:** Render's own host is allowed for its health check. Production refuses the console SMS sender, which would print codes into the logs, and staging uses a new discard sender until the gateway is chosen (D-08).
+  - **New decision D-52:** how `/api/*` reaches Render with the business's address. It must be settled before the first staging deploy.
 
 ### Changed
 

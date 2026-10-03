@@ -50,10 +50,9 @@ When a decision is made, move it to "Decided" with the date and who decided, and
 | D-42 | Rider pay rules: none / fixed per job / share of delivery fee (A-43) vs none / per job (`RiderProfile`) | M9 | Open |
 | D-43 | Delivery fee charged at booking or not (C-13 "Pending decision") | M9 | Open |
 | D-44 | Cancellation and redelivery fees (C-28, R-18 "open cancellation decision") | M9 | Open |
-| D-45 | Staff profile photos for X-15 (no field or upload screen); M1 shows initials | M3 | Open |
 | D-46 | QR code on S-44 likely needs a frontend dependency outside `CLAUDE.md` §4 | M3 | Open |
 | D-50 | `BranchMember.role`: the data model lists a role per branch membership, but nothing says how it differs from the person's own role (`User.role`). M1 leaves it out; adding it later is additive | M5 | Open |
-| D-51 | X-12 automatic code fill on Android (WebOTP) only works if the code SMS ends with a line like `@mamasafi.dialaservice.co.ke #123456`. The catalogue text is used word for word, so that line isn't added. X-12 is ready for it and offers the code through the keyboard (`autocomplete=one-time-code`) meanwhile | M1 (T09e) | Open |
+| D-52 | How Cloudflare sends `/api/*` on `{slug}.dialaservice.co.ke` to Render while the API still sees the business's address, which it uses to pick the business (CLAUDE.md §6.1). Options: (a) give Render a wildcard custom domain and use a Cloudflare Origin Rule to send `/api/*` to it with the Host kept, checking the rule is available on our Cloudflare plan; (b) a Worker forwards to Render with the original host in a header plus a shared secret, and Django trusts that header only with the secret (a code change to host resolution, needing an ADR); (c) serve the frontend from Render too, so one origin handles both. Whichever is chosen, a request sent straight to Render with a forged address must not resolve a business | Before the first staging deploy | Open |
 
 ## Decided
 
@@ -74,3 +73,5 @@ When a decision is made, move it to "Decided" with the date and who decided, and
 | D-47 | App dependency order changed to `core ← tenancy ← branches ← accounts ← …` to break the Device/Invitation ↔ BranchMember cycle (changes `CLAUDE.md` §6.6) | 2026-10-01 | Owner (approved with ADRs and M1 plan) |
 | D-48 | Starting throttle rates (ADR-0002 §9) and upload limits (JPEG/PNG/WebP, 5 MB; M1 plan T08) | 2026-10-01 | Owner (approved with ADRs and M1 plan) |
 | D-49 | Added auth endpoints not in the design doc list: `password-reset/verify`, invitation `send-code`/`verify`, `/me/pin`, `/devices/current` | 2026-10-01 | Owner (approved with ADRs and M1 plan) |
+| D-45 | Staff have profile photos, shown on X-15 instead of initials. Built in M3, which also settles where a photo is taken or uploaded (the specs don't say) | 2026-10-03 | Owner |
+| D-51 | Code SMS end with the WebOTP line (`@{business web address} #{code}`) so Android fills the code in by itself. It's added after the catalogue text (and after a business's own template), so the wording itself is unchanged | 2026-10-03 | Owner |

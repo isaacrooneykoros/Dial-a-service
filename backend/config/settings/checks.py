@@ -52,5 +52,12 @@ def validate_production(settings: Mapping[str, Any]) -> None:
     ):
         problems.append("STORAGE_BACKEND must be r2, with all STORAGE_* values set.")
 
+    # The console backend prints every message, codes included, into the logs
+    # (CLAUDE.md section 6.7: codes never appear in logs).
+    if settings.get("SMS_BACKEND", "").endswith("ConsoleSmsBackend"):
+        problems.append(
+            "SMS_BACKEND must not be the console backend: it prints codes into the logs."
+        )
+
     if problems:
         raise ImproperlyConfigured("Unsafe production settings: " + " ".join(problems))

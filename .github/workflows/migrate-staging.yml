@@ -1,0 +1,71 @@
+# Run database migrations on STAGING as dial_owner (M1 task T12, docs/ops/deploy.md).
+#
+# Manual only: Actions -> "Migrate staging" -> Run workflow. The owner role's URL is a
+# secret of the "staging" GitHub environment, so none of the Render services ever
+# holds it: if the API were compromised it still couldn't switch off row-level
+# security (owner decision, 2026-10-03). Run this before deploying code that needs
+# the new migrations, and keep migrations backwards-compatible so the running
+# version keeps working while it runs.
+name: Migrate staging
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: migrate-staging
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: Migrate staging
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    # Add a required reviewer to this environment in GitHub to get an approval step.
+    environment: staging
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      # dial_owner on Neon's DIRECT host (no -pooler), staging branch.
+      DATABASE_MIGRATION_URL: ${{ secrets.STAGING_DATABASE_MIGRATION_URL }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements/*.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements/base.txt
+
+      - name: Settings for this run
+        # Migrations need only the database. Django still insists on a secret key and a
+        # DATABASE_URL to start; these values are generated for the run and unused.
+        run: |
+          key=$(openssl rand -hex 48)
+          echo "::add-mask::$key"
+          {
+            echo "DJANGO_SETTINGS_MODULE=config.settings.base"
+            echo "DJANGO_SECRET_KEY=$key"
+            echo "DATABASE_URL=$DATABASE_MIGRATION_URL"
+          } >> "$GITHUB_ENV"
+
+      - name: Check the owner URL is set
+        run: |
+          if [ -z "$DATABASE_MIGRATION_URL" ]; then
+            echo "Set the STAGING_DATABASE_MIGRATION_URL secret in the 'staging' environment."
+            exit 1
+          fi
+
+      - name: Pending migrations
+        run: python manage.py showmigrations --plan | grep '\[ \]' || echo "None pending."
+
+      - name: Migrate as dial_owner, then re-apply grants
+        run: ./scripts/migrate.sh

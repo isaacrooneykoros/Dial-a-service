@@ -31,6 +31,13 @@ DJANGO_SERVICE: str = env("DJANGO_SERVICE", default="api")
 PLATFORM_ROOT_DOMAIN: str = env("PLATFORM_ROOT_DOMAIN", default="dialaservice.co.ke")
 PLATFORM_ADMIN_HOST: str = env("PLATFORM_ADMIN_HOST", default=f"admin.{PLATFORM_ROOT_DOMAIN}")
 ALLOWED_HOSTS: list[str] = env.list("DJANGO_ALLOWED_HOSTS", default=[])
+# Render sets RENDER_EXTERNAL_HOSTNAME (dial-api.onrender.com) on its services. Its
+# health check calls that host, which must be allowed or Django answers 400 before
+# the health view runs. It serves only /api/v1/health: any other path on it has no
+# business and gets 404 (TenantResolutionMiddleware).
+RENDER_EXTERNAL_HOSTNAME: str = env("RENDER_EXTERNAL_HOSTNAME", default="")
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 # Paths that answer on any host, with no business (ADR-0001 section 1). Keep
 # this list tiny: tests/test_code_rules.py fails if anything else is added.

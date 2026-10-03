@@ -29,6 +29,7 @@ def good_production_settings(**overrides: Any) -> dict[str, Any]:
         "SECRET_KEY": GOOD_SECRET,
         "ALLOWED_HOSTS": [".dialaservice.co.ke"],
         "REDIS_URL": "rediss://default:x@redis.example:6379",
+        "SMS_BACKEND": "apps.notifications.backends.DiscardSmsBackend",
         **R2,
     }
     settings.update(overrides)
@@ -119,6 +120,63 @@ class TestSettingsModules:
             DATABASE_URL=POSTGRES_URL,
             DJANGO_ALLOWED_HOSTS=".dialaservice.co.ke",
             REDIS_URL="redis://localhost:6379/0",
+            SMS_BACKEND="apps.notifications.backends.DiscardSmsBackend",
             **R2,
         )
         assert result.returncode == 0, result.stderr
+
+
+class TestRenderHost:
+    """T12: Render's own host is allowed, so its health check reaches /api/v1/health."""
+
+    def run_hosts(self, **env: str) -> str:
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "import django; django.setup(); from django.conf import settings; "
+                "print(settings.ALLOWED_HOSTS)",
+            ],
+            cwd=BACKEND_DIR,
+            env={
+                **{k: v for k, v in os.environ.items() if not k.startswith(("DJANGO_", "RENDER_"))},
+                # Production, with every value it insists on, as on Render.
+                "DJANGO_SETTINGS_MODULE": "config.settings.production",
+                "DJANGO_READ_DOT_ENV": "0",
+                "DJANGO_SECRET_KEY": GOOD_SECRET,
+                "DJANGO_ALLOWED_HOSTS": ".dialaservice.co.ke",
+                "DATABASE_URL": POSTGRES_URL,
+                "REDIS_URL": "rediss://default:x@redis.example:6379",
+                "SMS_BACKEND": "apps.notifications.backends.DiscardSmsBackend",
+                **R2,
+                **env,
+            },
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return result.stdout
+
+    def test_render_host_is_added(self) -> None:
+        assert "dial-api.onrender.com" in self.run_hosts(
+            RENDER_EXTERNAL_HOSTNAME="dial-api.onrender.com"
+        )
+
+    def test_nothing_is_added_elsewhere(self) -> None:
+        hosts = self.run_hosts()
+        assert ".dialaservice.co.ke" in hosts
+        assert "onrender" not in hosts
+
+
+def test_production_refuses_the_console_sms_backend() -> None:
+    bad = good_production_settings(SMS_BACKEND="apps.notifications.backends.ConsoleSmsBackend")
+    with pytest.raises(ImproperlyConfigured, match="prints codes"):
+        validate_production(bad)
+
+
+def test_the_discard_backend_keeps_nothing() -> None:
+    from apps.notifications.backends import DiscardSmsBackend
+
+    sent = DiscardSmsBackend().send("+254712345678", "482913 is your code")
+    assert sent.text == ""
+    assert sent.message_id.startswith("discarded-")

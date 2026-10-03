@@ -1,0 +1,147 @@
+# Render Blueprint for STAGING (M1 task T12). Written, not deployed: creating
+# these services, adding real secrets and any DNS change are done by the owner,
+# following docs/ops/deploy.md.
+#
+# Services:
+#   dial-api             gunicorn, business hosts (*.dialaservice.co.ke/api/*), dial_app
+#   dial-worker          Celery worker with the schedules (beat) embedded, dial_app
+#   dial-platform-admin  admin.dialaservice.co.ke, dial_platform. Serves nothing but the
+#                        health check until Milestone 6 (admin screens and 2FA, D-35)
+#   dial-redis           Key Value (Redis) for the task queue, private network only
+#
+# Not here, on purpose:
+#   - The database (Neon, a staging branch).
+#   - Migrations: none of these services holds the owner role's password. They
+#     run from the "Migrate staging" GitHub workflow (owner decision, 2026-10-03).
+#   - The frontend: Cloudflare Pages.
+# Every "sync: false" value is entered by hand in the Render dashboard, never here.
+
+envVarGroups:
+  - name: dial-staging-shared
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.10"
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+      - key: DJANGO_DEBUG
+        value: "false"
+      - key: DJANGO_LOG_LEVEL
+        value: INFO
+      - key: PLATFORM_ROOT_DOMAIN
+        value: dialaservice.co.ke
+      - key: PLATFORM_ADMIN_HOST
+        value: admin.dialaservice.co.ke
+      - key: DJANGO_ALLOWED_HOSTS
+        value: .dialaservice.co.ke
+      - key: APP_LINK_SCHEME
+        value: https
+      - key: APP_LINK_PORT
+        value: ""
+      - key: REFRESH_COOKIE_SECURE
+        value: "true"
+      - key: MAINTENANCE_MODE
+        value: "false"
+      - key: MPESA_ENV
+        value: sandbox
+      # Until the SMS gateway is chosen (D-08): nothing is sent, nothing is logged.
+      - key: SMS_BACKEND
+        value: apps.notifications.backends.DiscardSmsBackend
+      - key: STORAGE_BACKEND
+        value: r2
+      # Secrets and per-environment values: entered in the dashboard.
+      - key: DJANGO_SECRET_KEY
+        sync: false
+      - key: OTP_HASH_KEY
+        sync: false
+      - key: STORAGE_ENDPOINT
+        sync: false
+      - key: STORAGE_BUCKET
+        sync: false
+      - key: STORAGE_ACCESS_KEY
+        sync: false
+      - key: STORAGE_SECRET_KEY
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+
+services:
+  - type: web
+    name: dial-api
+    runtime: python
+    region: frankfurt
+    plan: 0.5c-512mb
+    rootDir: backend
+    buildCommand: pip install -r requirements/prod.txt
+    startCommand: >-
+      gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
+      --workers 2 --timeout 30 --access-logfile -
+    healthCheckPath: /api/v1/health
+    autoDeployTrigger: checksPass
+    envVars:
+      - fromGroup: dial-staging-shared
+      - key: DJANGO_SERVICE
+        value: api
+      # dial_app on Neon's POOLED host (-pooler); subject to row-level security.
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: dial-redis
+          property: connectionString
+
+  - type: worker
+    name: dial-worker
+    runtime: python
+    region: frankfurt
+    plan: 0.5c-512mb
+    rootDir: backend
+    buildCommand: pip install -r requirements/prod.txt
+    # One worker with the schedules embedded (outbox sweep, idempotency purge).
+    # Keep exactly one instance, or the schedules run twice.
+    startCommand: celery -A config worker --beat --loglevel info --concurrency 2
+    autoDeployTrigger: checksPass
+    envVars:
+      - fromGroup: dial-staging-shared
+      - key: DJANGO_SERVICE
+        value: api
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: dial-redis
+          property: connectionString
+
+  - type: web
+    name: dial-platform-admin
+    runtime: python
+    region: frankfurt
+    plan: 0.5c-512mb
+    rootDir: backend
+    buildCommand: pip install -r requirements/prod.txt
+    startCommand: >-
+      gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
+      --workers 1 --timeout 30 --access-logfile -
+    healthCheckPath: /api/v1/health
+    autoDeployTrigger: checksPass
+    envVars:
+      - fromGroup: dial-staging-shared
+      - key: DJANGO_SERVICE
+        value: platform_admin
+      # dial_platform (BYPASSRLS) on Neon's DIRECT host. Only this service has it.
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: dial-redis
+          property: connectionString
+
+  - type: keyvalue
+    name: dial-redis
+    region: frankfurt
+    plan: free
+    maxmemoryPolicy: noeviction
+    # Empty list: no connections from outside Render's private network.
+    ipAllowList: []
