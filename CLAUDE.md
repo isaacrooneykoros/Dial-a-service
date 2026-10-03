@@ -55,7 +55,7 @@ When scaffolding, check the current stable release of each package and pin exact
 
 **Backend:** Python 3.12, Django 5.2 LTS, Django REST Framework, djangorestframework-simplejwt, drf-spectacular, psycopg 3, django-environ, Celery 5 + redis, django-storages + boto3 (Cloudflare R2), cryptography (field encryption), phonenumbers, sentry-sdk, gunicorn, whitenoise (admin static only).
 
-**Backend dev:** pytest, pytest-django, factory-boy, time-machine, coverage, ruff, mypy + django-stubs.
+**Backend dev:** pytest, pytest-django, factory-boy, time-machine, coverage, ruff, mypy + django-stubs. CI only: pip-audit (ADR-0005).
 
 **Frontend:** Node 22 LTS, React + TypeScript (strict), Vite, React Router, TanStack Query, react-hook-form + zod, i18next + react-i18next, openapi-typescript + openapi-fetch, Tailwind CSS (driven by the design-system CSS variables), lucide-react.
 

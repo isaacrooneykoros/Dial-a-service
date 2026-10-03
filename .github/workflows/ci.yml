@@ -1,0 +1,156 @@
+# Continuous integration (M1 task T11). Every push to main and every pull request
+# runs the same checks as `CLAUDE.md` section 7, against a real Postgres 16 with
+# the three database roles, so row-level security is really exercised.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      # Throwaway values for a database that exists only for this run. Not secrets:
+      # nothing outside this job can reach it.
+      DIAL_OWNER_PASSWORD: ci-owner-password
+      DIAL_APP_PASSWORD: ci-app-password
+      DIAL_PLATFORM_PASSWORD: ci-platform-password
+      DJANGO_SECRET_KEY: ci-only-key-not-used-anywhere-else-0123456789abcdef
+      DATABASE_MIGRATION_URL: postgres://dial_owner:ci-owner-password@localhost:5432/dialaservice
+      DATABASE_URL: postgres://dial_app:ci-app-password@localhost:5432/dialaservice
+      PLATFORM_DATABASE_URL: postgres://dial_platform:ci-platform-password@localhost:5432/dialaservice
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements/*.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements/dev.txt
+
+      - name: Database roles (dial_owner, dial_app, dial_platform) and grants
+        run: >-
+          python -m scripts.db.setup_roles
+          --admin-url postgres://postgres:postgres@localhost:5432/postgres
+          --create-database dialaservice --no-write-env
+
+      - name: Migrations as dial_owner
+        run: ./scripts/migrate.sh
+
+      - name: No missing migrations
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Formatting
+        run: ruff format --check .
+
+      - name: Type check
+        run: mypy .
+
+      - name: OpenAPI schema matches the committed openapi.yaml
+        run: python manage.py check_openapi
+
+      - name: Tests as dial_app, with coverage
+        run: coverage run -m pytest -q
+
+      - name: Coverage at least 80% overall
+        run: coverage report --fail-under=80
+
+      - name: Coverage at least 90% on services, pricing and the state machine
+        run: >-
+          coverage report --fail-under=90
+          --include="apps/*/services.py,apps/*/services/*.py,apps/catalog/pricing.py,apps/orders/state_machine.py"
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: API client matches openapi.yaml
+        run: |
+          npm run api:gen
+          git diff --exit-code -- src/api/schema.d.ts
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Formatting
+        run: npm run format:check
+
+      - name: Tests
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+      - name: First-load budget (200 KB gzipped per app)
+        run: npm run budget
+
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Known vulnerabilities in backend packages (pip-audit, ADR-0005)
+        working-directory: backend
+        run: |
+          pip install -r requirements/audit.txt
+          pip-audit --strict -r requirements/dev.txt -r requirements/prod.txt
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: frontend/.nvmrc
+
+      - name: Known vulnerabilities in frontend packages
+        working-directory: frontend
+        run: npm audit --audit-level=high
