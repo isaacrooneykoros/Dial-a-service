@@ -69,6 +69,14 @@ def decimal_setting(key: str) -> Decimal:
     return Decimal(value)
 
 
+def business_currency(business_id: UUID) -> str:
+    """The currency a business charges in (KES for every business today)."""
+    currency = Business.objects.filter(pk=business_id).values_list("currency", flat=True).first()
+    if currency is None:
+        raise LookupError(f"Business {business_id} doesn't exist.")
+    return str(currency)
+
+
 def all_business_ids() -> list[UUID]:
     """Every business ID, for platform jobs that work business by business."""
     return list(Business.objects.order_by("created_at").values_list("id", flat=True))

@@ -16,6 +16,16 @@ All notable changes, grouped by milestone. Updated at the end of each milestone.
   - **Rounding:** line amounts to the cent, half-up. The total to whole shillings, half-up, with the rounding difference kept.
   - **Snapshots:** each line names the price version it used.
   - **Tests:** 73 hand-worked tests, 100% line and branch coverage.
+- Price versions and catalogue services (T04): `apps/catalog/services.py` and `selectors.py`.
+  - **Prices:** a new price takes effect from now or later (never the past). It closes the version in effect at its start and stops where a scheduled one begins; a not-yet-started version is replaced by setting the same start; gaps stay gaps.
+  - **Branch overrides** have their own versions and win only at their branch.
+  - **Services:** created switched off; switching on needs a current business-wide price. Once priced, a service's pricing model and unit are fixed, so old prices keep their meaning.
+  - **Modifiers** are a percent or an amount, for all services or a chosen list. A list for an "all services" modifier is refused.
+  - **Order:** services can be reordered for the quick-add buttons.
+  - **Audit:** every change is audited with before and after values (amounts as strings).
+  - **Refused updates** leave the object as it was.
+  - **Selectors:** the price at a time, versions, the active price list, and snapshots for the pricing engine.
+  - **Tests:** catalogue services 94% covered, selectors 98%, pricing 100%.
 
 ## Milestone 1: Foundation (complete 2026-10-03; staging configured, not deployed; report in `docs/plans/M1-report.md`)
 
