@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.tenant_context import get_current_business_id
+from apps.tenancy.config_sections import SECTIONS
 from apps.tenancy.selectors import business_config
 
 
@@ -40,10 +41,20 @@ class MaintenanceSerializer(serializers.Serializer[Any]):
     expected_return = serializers.CharField(allow_blank=True)
 
 
-class BusinessConfigSerializer(serializers.Serializer[Any]):
+class BaseConfigSerializer(serializers.Serializer[Any]):
     business = ConfigBusinessSerializer()
     branding = ConfigBrandingSerializer()
     maintenance = MaintenanceSerializer()
+
+
+def config_serializer() -> type[serializers.Serializer[Any]]:
+    """The base sections plus every registered one (apps/tenancy/config_sections.py).
+    Sections register in AppConfig.ready(), which runs before URLs load."""
+    fields = {name: section.serializer() for name, section in sorted(SECTIONS.items())}
+    return type("BusinessConfigSerializer", (BaseConfigSerializer,), fields)
+
+
+BusinessConfigSerializer = config_serializer()
 
 
 class BusinessConfigView(APIView):
@@ -52,7 +63,7 @@ class BusinessConfigView(APIView):
 
     @extend_schema(
         operation_id="business_config",
-        summary="X-01 Branding, basics and maintenance for this business",
+        summary="X-01 Branding, basics, maintenance and the price list for this business",
         responses={200: BusinessConfigSerializer},
         auth=[],
     )
@@ -62,4 +73,6 @@ class BusinessConfigView(APIView):
             "active": settings.MAINTENANCE_MODE,
             "expected_return": settings.MAINTENANCE_EXPECTED_RETURN,
         }
+        for name, section in SECTIONS.items():
+            config[name] = section.build()
         return Response(BusinessConfigSerializer(config).data)

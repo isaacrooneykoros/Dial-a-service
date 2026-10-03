@@ -342,7 +342,7 @@ paths:
   /api/v1/business/config:
     get:
       operationId: business_config
-      summary: X-01 Branding, basics and maintenance for this business
+      summary: X-01 Branding, basics, maintenance and the price list for this business
       tags:
       - business
       responses:
@@ -432,6 +432,79 @@ paths:
           description: Error envelope
         '409':
           description: Error envelope
+  /api/v1/console/catalog/import/apply:
+    post:
+      operationId: console_catalog_import_apply
+      summary: A-31 Apply a previewed import as new price versions (all or nothing)
+      tags:
+      - console
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportApplyRequestRequest'
+        required: true
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportPreview'
+          description: ''
+        '400':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '404':
+          description: Error envelope
+        '409':
+          description: Error envelope
+  /api/v1/console/catalog/import/preview:
+    post:
+      operationId: console_catalog_import_preview
+      summary: 'A-31 Preview a CSV import: each row new, changed, unchanged or invalid'
+      tags:
+      - console
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportPreviewRequestRequest'
+        required: true
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportPreview'
+          description: ''
+        '400':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '404':
+          description: Error envelope
+        '409':
+          description: Error envelope
+  /api/v1/console/catalog/import/template:
+    get:
+      operationId: console_catalog_import_template
+      summary: 'A-31 The CSV template: your current price list, ready to edit'
+      tags:
+      - console
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            text/csv:
+              schema:
+                type: string
+          description: ''
   /api/v1/console/catalog/modifiers:
     get:
       operationId: console_catalog_modifiers_list
@@ -1069,6 +1142,31 @@ paths:
           description: Error envelope
         '429':
           description: Error envelope with retry_after
+  /api/v1/quotes:
+    post:
+      operationId: quotes_create
+      summary: Price an order (S-14 preview, A-30 calculator); saves nothing
+      tags:
+      - quotes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuoteRequestRequest'
+        required: true
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+          description: ''
+        '400':
+          description: Error envelope
+        '403':
+          description: Error envelope
   /api/v1/staff/devices:
     post:
       operationId: staff_devices_register
@@ -1195,9 +1293,12 @@ components:
           $ref: '#/components/schemas/ConfigBranding'
         maintenance:
           $ref: '#/components/schemas/Maintenance'
+        catalog:
+          $ref: '#/components/schemas/ConfigCatalog'
       required:
       - branding
       - business
+      - catalog
       - maintenance
     Category:
       type: object
@@ -1309,6 +1410,141 @@ components:
       - name
       - slug
       - timezone
+    ConfigCatalog:
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConfigCategory'
+        services:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConfigService'
+        modifiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConfigModifier'
+        vat:
+          $ref: '#/components/schemas/ConfigVat'
+      required:
+      - categories
+      - modifiers
+      - services
+      - vat
+    ConfigCategory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name_en:
+          type: string
+        name_sw:
+          type: string
+        position:
+          type: integer
+      required:
+      - id
+      - name_en
+      - name_sw
+      - position
+    ConfigModifier:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name_en:
+          type: string
+        name_sw:
+          type: string
+        kind:
+          $ref: '#/components/schemas/KindEnum'
+        percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          nullable: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        applies_to_all:
+          type: boolean
+        service_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+      - amount
+      - applies_to_all
+      - id
+      - kind
+      - name_en
+      - name_sw
+      - percent
+      - service_ids
+    ConfigService:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        category_id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name_en:
+          type: string
+        name_sw:
+          type: string
+        pricing_model:
+          $ref: '#/components/schemas/PricingModelEnum'
+        unit:
+          $ref: '#/components/schemas/UnitEnum'
+        position:
+          type: integer
+        unit_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        minimum_charge:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        currency:
+          type: string
+      required:
+      - category_id
+      - code
+      - currency
+      - id
+      - minimum_charge
+      - name_en
+      - name_sw
+      - position
+      - pricing_model
+      - unit
+      - unit_price
+    ConfigVat:
+      type: object
+      properties:
+        registered:
+          type: boolean
+        rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        prices_include_vat:
+          type: boolean
+      required:
+      - prices_include_vat
+      - rate
+      - registered
     ConsoleDevice:
       type: object
       description: 'A-42: registered counter devices (name, branch, registered by,
@@ -1386,7 +1622,7 @@ components:
       type: object
       properties:
         status:
-          $ref: '#/components/schemas/StatusEnum'
+          $ref: '#/components/schemas/HealthStatusEnum'
         checks:
           type: object
           additionalProperties:
@@ -1406,6 +1642,127 @@ components:
       required:
       - checks
       - status
+    HealthStatusEnum:
+      enum:
+      - ok
+      - degraded
+      type: string
+      description: |-
+        * `ok` - ok
+        * `degraded` - degraded
+    ImportApplyRequestRequest:
+      type: object
+      properties:
+        csv:
+          type: string
+          minLength: 1
+        fingerprint:
+          type: string
+          minLength: 64
+          maxLength: 64
+        effective_from:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - csv
+      - fingerprint
+    ImportCounts:
+      type: object
+      properties:
+        new:
+          type: integer
+        changed:
+          type: integer
+        unchanged:
+          type: integer
+        invalid:
+          type: integer
+      required:
+      - changed
+      - invalid
+      - new
+      - unchanged
+    ImportPreview:
+      type: object
+      properties:
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportRow'
+        counts:
+          $ref: '#/components/schemas/ImportCounts'
+        fingerprint:
+          type: string
+      required:
+      - counts
+      - fingerprint
+      - rows
+    ImportPreviewRequestRequest:
+      type: object
+      properties:
+        csv:
+          type: string
+          minLength: 1
+      required:
+      - csv
+    ImportRow:
+      type: object
+      properties:
+        line:
+          type: integer
+        service:
+          type: string
+        category:
+          type: string
+        pricing_model:
+          type: string
+        unit:
+          type: string
+        price:
+          type: string
+        minimum:
+          type: string
+        status:
+          $ref: '#/components/schemas/ImportRowStatusEnum'
+        problem:
+          type: string
+        message:
+          type: string
+        old_price:
+          type: string
+          nullable: true
+        old_minimum:
+          type: string
+          nullable: true
+        new_category:
+          type: boolean
+      required:
+      - category
+      - line
+      - message
+      - minimum
+      - new_category
+      - old_minimum
+      - old_price
+      - price
+      - pricing_model
+      - problem
+      - service
+      - status
+      - unit
+    ImportRowStatusEnum:
+      enum:
+      - new
+      - changed
+      - unchanged
+      - invalid
+      type: string
+      description: |-
+        * `new` - new
+        * `changed` - changed
+        * `unchanged` - unchanged
+        * `invalid` - invalid
     Invitation:
       type: object
       properties:
@@ -1956,6 +2313,215 @@ components:
       - phone
       - role
       - role_label
+    Quote:
+      type: object
+      properties:
+        currency:
+          type: string
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuoteLine'
+        subtotal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        flat_modifiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuoteFlatModifier'
+        laundry_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        discount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        delivery_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        taxable:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        vat_registered:
+          type: boolean
+        vat_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        vat_included:
+          type: boolean
+        vat:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        total_unrounded:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        rounding:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,0})?$
+        modifiers_not_applied:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+      - currency
+      - delivery_fee
+      - discount
+      - flat_modifiers
+      - laundry_total
+      - lines
+      - modifiers_not_applied
+      - rounding
+      - subtotal
+      - taxable
+      - total
+      - total_unrounded
+      - vat
+      - vat_included
+      - vat_rate
+      - vat_registered
+    QuoteDiscountRequestRequest:
+      type: object
+      properties:
+        percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          nullable: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        reason:
+          type: string
+          maxLength: 200
+      required:
+      - reason
+    QuoteFlatModifier:
+      type: object
+      properties:
+        modifier_id:
+          type: string
+          format: uuid
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - amount
+      - modifier_id
+    QuoteLine:
+      type: object
+      properties:
+        service_id:
+          type: string
+          format: uuid
+        price_id:
+          type: string
+          format: uuid
+        name_en:
+          type: string
+        name_sw:
+          type: string
+        pricing_model:
+          type: string
+        unit:
+          type: string
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,5}(?:\.\d{0,2})?$
+        unit_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        base:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        minimum_applied:
+          type: boolean
+        modifier_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        modifier_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        modifier_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - amount
+      - base
+      - minimum_applied
+      - modifier_amount
+      - modifier_ids
+      - modifier_percent
+      - name_en
+      - name_sw
+      - price_id
+      - pricing_model
+      - quantity
+      - service_id
+      - unit
+      - unit_price
+    QuoteLineRequestRequest:
+      type: object
+      properties:
+        service_id:
+          type: string
+          format: uuid
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,5}(?:\.\d{0,2})?$
+      required:
+      - quantity
+      - service_id
+    QuoteRequestRequest:
+      type: object
+      properties:
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuoteLineRequestRequest'
+        branch_id:
+          type: string
+          format: uuid
+          nullable: true
+        modifier_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          maxItems: 20
+        discount:
+          allOf:
+          - $ref: '#/components/schemas/QuoteDiscountRequestRequest'
+          nullable: true
+      required:
+      - lines
     ReorderRequest:
       type: object
       properties:
@@ -2216,14 +2782,6 @@ components:
       required:
       - content_type
       - size
-    StatusEnum:
-      enum:
-      - ok
-      - degraded
-      type: string
-      description: |-
-        * `ok` - ok
-        * `degraded` - degraded
     UnitEnum:
       enum:
       - kg

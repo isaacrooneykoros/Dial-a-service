@@ -238,7 +238,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** X-01 Branding, basics and maintenance for this business */
+        /** X-01 Branding, basics, maintenance and the price list for this business */
         get: operations["business_config"];
         put?: never;
         post?: never;
@@ -277,6 +277,57 @@ export interface paths {
         put?: never;
         /** A-30 Rename a category, or switch it on or off */
         post: operations["console_catalog_categories_update"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/console/catalog/import/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A-31 Apply a previewed import as new price versions (all or nothing) */
+        post: operations["console_catalog_import_apply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/console/catalog/import/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A-31 Preview a CSV import: each row new, changed, unchanged or invalid */
+        post: operations["console_catalog_import_preview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/console/catalog/import/template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A-31 The CSV template: your current price list, ready to edit */
+        get: operations["console_catalog_import_template"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -632,6 +683,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/quotes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Price an order (S-14 preview, A-30 calculator); saves nothing */
+        post: operations["quotes_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/devices": {
         parameters: {
             query?: never;
@@ -706,6 +774,7 @@ export interface components {
             business: components["schemas"]["ConfigBusiness"];
             branding: components["schemas"]["ConfigBranding"];
             maintenance: components["schemas"]["Maintenance"];
+            catalog: components["schemas"]["ConfigCatalog"];
         };
         Category: {
             /** Format: uuid */
@@ -747,6 +816,55 @@ export interface components {
             timezone: string;
             language: string;
         };
+        ConfigCatalog: {
+            categories: components["schemas"]["ConfigCategory"][];
+            services: components["schemas"]["ConfigService"][];
+            modifiers: components["schemas"]["ConfigModifier"][];
+            vat: components["schemas"]["ConfigVat"];
+        };
+        ConfigCategory: {
+            /** Format: uuid */
+            id: string;
+            name_en: string;
+            name_sw: string;
+            position: number;
+        };
+        ConfigModifier: {
+            /** Format: uuid */
+            id: string;
+            name_en: string;
+            name_sw: string;
+            kind: components["schemas"]["KindEnum"];
+            /** Format: decimal */
+            percent: string | null;
+            /** Format: decimal */
+            amount: string | null;
+            applies_to_all: boolean;
+            service_ids: string[];
+        };
+        ConfigService: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            category_id: string;
+            code: string;
+            name_en: string;
+            name_sw: string;
+            pricing_model: components["schemas"]["PricingModelEnum"];
+            unit: components["schemas"]["UnitEnum"];
+            position: number;
+            /** Format: decimal */
+            unit_price: string;
+            /** Format: decimal */
+            minimum_charge: string;
+            currency: string;
+        };
+        ConfigVat: {
+            registered: boolean;
+            /** Format: decimal */
+            rate: string;
+            prices_include_vat: boolean;
+        };
         /** @description A-42: registered counter devices (name, branch, registered by, last used). */
         ConsoleDevice: {
             /** Format: uuid */
@@ -777,7 +895,7 @@ export interface components {
             branch_id: string;
         };
         Health: {
-            status: components["schemas"]["StatusEnum"];
+            status: components["schemas"]["HealthStatusEnum"];
             checks: {
                 [key: string]: string;
             };
@@ -788,6 +906,55 @@ export interface components {
                 [key: string]: string;
             };
         };
+        /**
+         * @description * `ok` - ok
+         *     * `degraded` - degraded
+         * @enum {string}
+         */
+        HealthStatusEnum: "ok" | "degraded";
+        ImportApplyRequestRequest: {
+            csv: string;
+            fingerprint: string;
+            /** Format: date-time */
+            effective_from?: string | null;
+        };
+        ImportCounts: {
+            new: number;
+            changed: number;
+            unchanged: number;
+            invalid: number;
+        };
+        ImportPreview: {
+            rows: components["schemas"]["ImportRow"][];
+            counts: components["schemas"]["ImportCounts"];
+            fingerprint: string;
+        };
+        ImportPreviewRequestRequest: {
+            csv: string;
+        };
+        ImportRow: {
+            line: number;
+            service: string;
+            category: string;
+            pricing_model: string;
+            unit: string;
+            price: string;
+            minimum: string;
+            status: components["schemas"]["ImportRowStatusEnum"];
+            problem: string;
+            message: string;
+            old_price: string | null;
+            old_minimum: string | null;
+            new_category: boolean;
+        };
+        /**
+         * @description * `new` - new
+         *     * `changed` - changed
+         *     * `unchanged` - unchanged
+         *     * `invalid` - invalid
+         * @enum {string}
+         */
+        ImportRowStatusEnum: "new" | "changed" | "unchanged" | "invalid";
         Invitation: {
             /** Format: uuid */
             readonly id: string;
@@ -1012,6 +1179,84 @@ export interface components {
             first_name: string;
             phone: string;
         };
+        Quote: {
+            currency: string;
+            lines: components["schemas"]["QuoteLine"][];
+            /** Format: decimal */
+            subtotal: string;
+            flat_modifiers: components["schemas"]["QuoteFlatModifier"][];
+            /** Format: decimal */
+            laundry_total: string;
+            /** Format: decimal */
+            discount: string;
+            /** Format: decimal */
+            delivery_fee: string;
+            /** Format: decimal */
+            taxable: string;
+            vat_registered: boolean;
+            /** Format: decimal */
+            vat_rate: string;
+            vat_included: boolean;
+            /** Format: decimal */
+            vat: string;
+            /** Format: decimal */
+            total_unrounded: string;
+            /** Format: decimal */
+            rounding: string;
+            /** Format: decimal */
+            total: string;
+            modifiers_not_applied: string[];
+        };
+        QuoteDiscountRequestRequest: {
+            /** Format: decimal */
+            percent?: string | null;
+            /** Format: decimal */
+            amount?: string | null;
+            reason: string;
+        };
+        QuoteFlatModifier: {
+            /** Format: uuid */
+            modifier_id: string;
+            /** Format: decimal */
+            amount: string;
+        };
+        QuoteLine: {
+            /** Format: uuid */
+            service_id: string;
+            /** Format: uuid */
+            price_id: string;
+            name_en: string;
+            name_sw: string;
+            pricing_model: string;
+            unit: string;
+            /** Format: decimal */
+            quantity: string;
+            /** Format: decimal */
+            unit_price: string;
+            /** Format: decimal */
+            base: string;
+            minimum_applied: boolean;
+            /** Format: decimal */
+            modifier_percent: string;
+            modifier_ids: string[];
+            /** Format: decimal */
+            modifier_amount: string;
+            /** Format: decimal */
+            amount: string;
+        };
+        QuoteLineRequestRequest: {
+            /** Format: uuid */
+            service_id: string;
+            /** Format: decimal */
+            quantity: string;
+        };
+        QuoteRequestRequest: {
+            lines: components["schemas"]["QuoteLineRequestRequest"][];
+            /** Format: uuid */
+            branch_id?: string | null;
+            modifier_ids?: string[];
+            discount?: components["schemas"]["QuoteDiscountRequestRequest"] | null;
+        };
         ReorderRequest: {
             service_ids: string[];
         };
@@ -1111,12 +1356,6 @@ export interface components {
             /** @description Bytes. */
             size: number;
         };
-        /**
-         * @description * `ok` - ok
-         *     * `degraded` - degraded
-         * @enum {string}
-         */
-        StatusEnum: "ok" | "degraded";
         /**
          * @description * `kg` - kg
          *     * `item` - item
@@ -1890,6 +2129,127 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    console_catalog_import_apply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportApplyRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportPreview"];
+                };
+            };
+            /** @description Error envelope */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    console_catalog_import_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportPreviewRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportPreview"];
+                };
+            };
+            /** @description Error envelope */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    console_catalog_import_template: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
             };
         };
     };
@@ -2835,6 +3195,43 @@ export interface operations {
             };
             /** @description Error envelope with retry_after */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    quotes_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuoteRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Quote"];
+                };
+            };
+            /** @description Error envelope */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

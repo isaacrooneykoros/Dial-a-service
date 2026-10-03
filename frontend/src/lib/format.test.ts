@@ -6,6 +6,7 @@ import {
   formatRecent,
   formatTime,
   formatTimeWindow,
+  formatUnitPrice,
   formatWeight,
   maskPhone,
 } from "@/lib/format";
@@ -124,5 +125,22 @@ describe("people", () => {
     [[" Achieng ", " "], "Achieng"],
   ])("%j -> %s", ([first, last], expected) => {
     expect(formatName(first as string, last as string)).toBe(expected);
+  });
+});
+
+describe("formatUnitPrice", () => {
+  it.each([
+    ["120.00", "kg", "KSh 120 per kg"],
+    ["120.55", "kg", "KSh 120.55 per kg"],
+    ["120.50", "kg", "KSh 120.50 per kg"],
+    ["1200.00", "item", "KSh 1,200 per item"],
+    ["300.00", "pair", "KSh 300 per pair"],
+    ["1200.00", "set", "KSh 1,200 per set"],
+  ])("%s %s -> %s", (amount, unit, expected) => {
+    expect(formatUnitPrice(amount, unit)).toBe(expected);
+  });
+
+  it("never rounds a unit price to the shilling", () => {
+    expect(formatUnitPrice("0.50", "kg")).toBe("KSh 0.50 per kg");
   });
 });

@@ -22,6 +22,12 @@ export function businessConfig(overrides: Partial<BusinessConfig> = {}): Busines
       privacy_url: "",
     },
     maintenance: { active: false, expected_return: "" },
+    catalog: {
+      categories: [],
+      services: [],
+      modifiers: [],
+      vat: { registered: false, rate: "16.00", prices_include_vat: true },
+    },
     ...overrides,
   };
 }

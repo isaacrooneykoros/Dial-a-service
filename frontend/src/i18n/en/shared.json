@@ -196,5 +196,14 @@
       "confirm": "Cancel invitation",
       "keep": "Keep it"
     }
+  },
+  "units": {
+    "kg": "kg",
+    "item": "item",
+    "pair": "pair",
+    "set": "set"
+  },
+  "price": {
+    "per_unit": "{{price}} per {{unit}}"
   }
 }

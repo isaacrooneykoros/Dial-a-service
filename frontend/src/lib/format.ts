@@ -63,6 +63,21 @@ export function formatMoney(amount: Money, currency = "KES"): string {
   return `${sign}${label} ${groupThousands(whole)}`;
 }
 
+/**
+ * A price per unit, as in a price list: "KSh 120 per kg", "KSh 120.55 per kg",
+ * "KSh 450 per item". Cents show only when there are some: a unit price isn't what
+ * the customer pays (the total is), so it's never rounded to the shilling.
+ */
+export function formatUnitPrice(amount: Money, unit: string, currency = "KES"): string {
+  const parts = parseDecimal(amount);
+  const { whole, fraction } = roundDigits(parts, 2);
+  const cents = /^0*$/.test(fraction) ? "" : `.${fraction}`;
+  const label = CURRENCY_LABELS[currency] ?? currency;
+  const price = `${label} ${groupThousands(whole)}${cents}`;
+  const unitLabel = i18n.t(`shared:units.${unit}`, { defaultValue: unit });
+  return i18n.t("shared:price.per_unit", { price, unit: unitLabel });
+}
+
 /** "6.40" -> "6.4 kg" (one decimal). */
 export function formatWeight(kilograms: string): string {
   const { whole, fraction } = roundDigits(parseDecimal(kilograms), 1);

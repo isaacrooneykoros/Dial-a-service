@@ -49,6 +49,12 @@ All notable changes, grouped by milestone. Updated at the end of each milestone.
   - **Out:** the full pricing-engine breakdown, amounts as text. Nothing is saved.
   - **Rules:** branch overrides apply. Switched-off, unpriced or another business's services are refused on their line. Discounts need the person's "give discounts" right (owners and managers always have it) and a reason, within the cap. VAT follows the business settings.
   - **Shared changes:** a new `QuantityField` takes quantities only as text. The cross-business token helper can send a request body.
+- Prices in the business config (T09, D-59): `GET /business/config` gains a `catalog` section.
+  - **Contents:** active services with the business-wide price in effect now (with quick-add order), their categories, active modifiers, and how VAT is shown.
+  - **Kept private:** price history, switched-off services and branch overrides stay signed-in only. Price changes show at once (config isn't cached).
+  - **How it's wired:** apps add config sections through a registry in `tenancy` (`config_sections.py`), so `tenancy` never imports the catalogue.
+  - **Frontend:** `formatUnitPrice()` gives "KSh 120 per kg", showing cents only when there are some. Unit prices are never rounded to the shilling.
+  - `openapi.yaml` and the frontend client are regenerated.
 
 ## Milestone 1: Foundation (complete 2026-10-03; staging configured, not deployed; report in `docs/plans/M1-report.md`)
 
