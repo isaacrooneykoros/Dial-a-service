@@ -81,8 +81,14 @@ def business() -> Business:
 
 
 class TestRegistry:
-    def test_m1_declares_no_business_settings(self) -> None:
-        assert settings_registry.SETTINGS == {}
+    def test_the_declared_settings_and_their_defaults(self) -> None:
+        # M2: VAT and the discount cap (D-53, D-56, D-61). Nothing else exists.
+        assert {key: spec.default for key, spec in settings_registry.SETTINGS.items()} == {
+            "vat.registered": False,
+            "vat.rate": "16.00",
+            "vat.prices_include_vat": True,
+            "discounts.max_percent": "0.00",
+        }
 
     def test_unknown_key(self) -> None:
         with pytest.raises(KeyError, match="Unknown business setting"):

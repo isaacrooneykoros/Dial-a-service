@@ -53,6 +53,7 @@ When a decision is made, move it to "Decided" with the date and who decided, and
 | D-46 | QR code on S-44 likely needs a frontend dependency outside `CLAUDE.md` §4 | M3 | Open |
 | D-50 | `BranchMember.role`: the data model lists a role per branch membership, but nothing says how it differs from the person's own role (`User.role`). M1 leaves it out; adding it later is additive | M5 | Open |
 | D-52 | How Cloudflare sends `/api/*` on `{slug}.dialaservice.co.ke` to Render while the API still sees the business's address, which it uses to pick the business (CLAUDE.md §6.1). Options: (a) give Render a wildcard custom domain and use a Cloudflare Origin Rule to send `/api/*` to it with the Host kept, checking the rule is available on our Cloudflare plan; (b) a Worker forwards to Render with the original host in a header plus a shared secret, and Django trusts that header only with the secret (a code change to host resolution, needing an ADR); (c) serve the frontend from Render too, so one origin handles both. Whichever is chosen, a request sent straight to Render with a forged address must not resolve a business | Before the first staging deploy | Open |
+| D-61 | For a VAT-registered business, do listed prices include VAT by default? M2 uses the safe default **yes**: the price on the list is what the customer pays, and VAT is shown as "of which VAT", never added on top unexpectedly. The owner can switch it per business. `# TODO(decision): vat-prices-include` | Confirm before M5 (A-61 settings screen) | Open (safe default in place) |
 
 ## Decided
 

@@ -1,6 +1,7 @@
 """Read queries for the tenancy app. Other apps call these, never the models directly."""
 
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
@@ -58,6 +59,14 @@ def get_setting(key: str) -> Any:
     spec = get_spec(key)
     row = BusinessSetting.objects.filter(key=key).values_list("value", flat=True).first()
     return spec.default if row is None else row
+
+
+def decimal_setting(key: str) -> Decimal:
+    """A percentage setting (stored as a decimal string) as an exact Decimal."""
+    value = get_setting(key)
+    if not isinstance(value, str):
+        raise TypeError(f"Setting {key!r} is not stored as a decimal string.")
+    return Decimal(value)
 
 
 def all_business_ids() -> list[UUID]:

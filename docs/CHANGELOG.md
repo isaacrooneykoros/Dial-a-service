@@ -2,6 +2,13 @@
 
 All notable changes, grouped by milestone. Updated at the end of each milestone.
 
+## Milestone 2: Catalogue and pricing (in progress)
+
+### Added
+
+- Catalogue models (T01): `ServiceCategory`, `Service` (per kg, per item or flat; units kg, item, pair, set; D-58), `ServicePrice` (business-wide or per-branch versions with an effective period), `PriceModifier` (a percent or an amount; all services or a chosen list, D-55) and its service links. The database itself refuses overlapping price versions (an exclusion constraint using Postgres's built-in `btree_gist` extension), a unit that doesn't fit the pricing model, prices of zero or less, and a modifier with both or neither of percent and amount. RLS on every table. `django.contrib.postgres` installed.
+- Money settings (T02): `vat.registered`, `vat.rate` (16.00, D-53), `vat.prices_include_vat` (safe default yes, D-61 to confirm) and `discounts.max_percent` (0.00, so no discounts until set, D-56). Percentages are stored as decimal strings, never JSON numbers, and checked to 0–100 with at most 2 decimals. `decimal_setting()` reads them as exact decimals.
+
 ## Milestone 1: Foundation (complete 2026-10-03; staging configured, not deployed; report in `docs/plans/M1-report.md`)
 
 ### Added
