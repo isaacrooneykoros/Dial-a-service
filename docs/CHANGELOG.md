@@ -2,7 +2,7 @@
 
 All notable changes, grouped by milestone. Updated at the end of each milestone.
 
-## Milestone 2: Catalogue and pricing (in progress)
+## Milestone 2: Catalogue and pricing (complete 2026-10-04; report in `docs/plans/M2-report.md`)
 
 ### Added
 
