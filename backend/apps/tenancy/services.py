@@ -6,10 +6,14 @@ from typing import Any
 from django.db import transaction
 
 from apps.core import audit
+from apps.core.outbox import emit
 from apps.core.tenant_context import tenant_context
 from apps.tenancy.models import Business, BusinessBranding, BusinessDomain, BusinessSetting
 from apps.tenancy.settings_registry import get_spec
 from apps.tenancy.validators import normalize_host
+
+# Handled by the apps that set up a new business (apps/catalog/handlers.py).
+BUSINESS_CREATED = "business.created"
 
 
 @dataclass(frozen=True)
@@ -43,6 +47,9 @@ def create_business(*, name: str, slug: str, host: str, branding: BrandingDetail
             record.full_clean(exclude=["business"])
             record.save()
             audit.record("business.create", obj=business, after={"slug": slug, "host": domain.host})
+            # Other apps set the new business up after commit (the catalogue adds its
+            # template price list). tenancy can't call them: dependencies point one way.
+            emit(BUSINESS_CREATED, {"slug": slug})
     return business
 
 

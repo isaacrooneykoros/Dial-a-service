@@ -26,6 +26,11 @@ All notable changes, grouped by milestone. Updated at the end of each milestone.
   - **Refused updates** leave the object as it was.
   - **Selectors:** the price at a time, versions, the active price list, and snapshots for the pricing engine.
   - **Tests:** catalogue services 94% covered, selectors 98%, pricing 100%.
+- The template list (T05, D-57):
+  - **The list:** a new business gets Wash and fold and Wash and iron (per kg), Ironing only, Duvets, Blankets, Suits and Curtains (per item), and Shoes (per pair), in the categories Wash and Special items. Everything starts unpriced and switched off.
+  - **How it arrives:** `tenancy.create_business` records a `business.created` outbox event, and the catalogue's handler installs the list after commit. Every way of creating a business is covered, and the app dependencies still point one way.
+  - **Safe to repeat:** existing categories and services are matched by name and code, so nothing is duplicated and the owner's changes are kept.
+  - **`seed_dev`** moves to the catalogue app (the highest app it uses) and gives the two dev businesses different sample prices and an Express modifier (50% at Mama Safi, KSh 300 at CleanPro).
 
 ## Milestone 1: Foundation (complete 2026-10-03; staging configured, not deployed; report in `docs/plans/M1-report.md`)
 

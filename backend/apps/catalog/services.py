@@ -26,7 +26,7 @@ from django.db.models import Max, Q
 from django.utils import timezone
 
 from apps.branches.selectors import branches_by_ids
-from apps.catalog import selectors
+from apps.catalog import selectors, templates
 from apps.catalog.models import (
     PriceModifier,
     PriceModifierService,
@@ -545,3 +545,38 @@ def update_modifier(
         request=request,
     )
     return modifier
+
+
+# --- The starting price list (D-57) ------------------------------------------------------
+
+
+def install_template(*, actor: Any = None, request: Any = None) -> list[Service]:
+    """Add the template categories and services the business doesn't have yet.
+
+    Safe to run again: categories are matched by name and services by code, so
+    nothing is duplicated and nothing the owner changed is touched. Everything is
+    unpriced and switched off until the owner sets prices.
+    """
+    categories = {c.name_en: c for c in ServiceCategory.objects.all()}
+    for category in templates.CATEGORIES:
+        if category.name_en not in categories:
+            categories[category.name_en] = create_category(
+                name_en=category.name_en, actor=actor, request=request
+            )
+    existing = set(Service.objects.values_list("code", flat=True))
+    created: list[Service] = []
+    for template in templates.SERVICES:
+        if template.code in existing:
+            continue
+        created.append(
+            create_service(
+                category=categories[template.category],
+                code=template.code,
+                name_en=template.name_en,
+                pricing_model=template.pricing_model,
+                unit=template.unit,
+                actor=actor,
+                request=request,
+            )
+        )
+    return created

@@ -173,7 +173,7 @@ Inside each Django app: `models.py`, `services.py` (or `services/`), `selectors.
 
 - **Business hosts:** Chrome and Edge resolve `*.localhost` to 127.0.0.1, so use `http://mamasafi.localhost:5173` and `http://cleanpro.localhost:5173`. `ALLOWED_HOSTS` includes `.localhost`.
 - **Database:** Postgres 16, either a Neon dev branch or a local Postgres (Docker Desktop). Run `scripts/db/create_roles.sql` once.
-- **Seed data:** `python manage.py seed_dev` creates two businesses (`mamasafi`, `cleanpro`), each with a domain, its own branding, a branch, and an owner, a manager and a staff member with passwords and PINs, and prints their logins. It is safe to run again and refuses production settings. `python manage.py create_business` adds a real business by hand (the owner's password is prompted, never passed as an argument).
+- **Seed data:** `python manage.py seed_dev` creates two businesses (`mamasafi`, `cleanpro`), each with a domain, its own branding, a branch, an owner, a manager and a staff member with passwords and PINs, and the template price list with sample prices, and prints their logins. It is safe to run again and refuses production settings. `python manage.py create_business` adds a real business by hand (the owner's password is prompted, never passed as an argument).
 - **Celery on Windows:** `celery -A config worker --pool=solo -l info` (the default pool doesn't run on Windows).
 
 Backend (PowerShell, from `backend/`). These commands are created in Milestone 1; keep this section accurate:

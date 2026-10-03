@@ -44,6 +44,16 @@ def has_prices(service_id: Any) -> bool:
     return ServicePrice.objects.filter(service_id=service_id).exists()
 
 
+def service_by_code(code: str) -> Service | None:
+    service: Service | None = Service.objects.filter(code=code).first()
+    return service
+
+
+def modifier_by_name(name_en: str) -> PriceModifier | None:
+    modifier: PriceModifier | None = PriceModifier.objects.filter(name_en=name_en).first()
+    return modifier
+
+
 def services_by_ids(service_ids: Any) -> list[Service]:
     return list(Service.objects.filter(pk__in=list(service_ids)))
 

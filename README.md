@@ -69,7 +69,7 @@ Open Chrome or Edge (they send `*.localhost` to your own computer):
 | Mama Safi Laundry | <http://mamasafi.localhost:5173/staff> | <http://mamasafi.localhost:5173/console> |
 | CleanPro Dry Cleaners | <http://cleanpro.localhost:5173/staff> | <http://cleanpro.localhost:5173/console> |
 
-`seed_dev` prints every login. Each business has an owner, a manager and a staff member, on fake numbers `0700 000 1xx` (Mama Safi) and `0700 000 2xx` (CleanPro). They all have the password `dial-dev-pass`, and each has a PIN for counter devices. Running `seed_dev` again is safe: it resets those passwords and PINs and creates nothing twice.
+`seed_dev` prints every login. Each business has an owner, a manager and a staff member, on fake numbers `0700 000 1xx` (Mama Safi) and `0700 000 2xx` (CleanPro). They all have the password `dial-dev-pass`, and each has a PIN for counter devices. Each business also gets the template price list with sample prices (they differ between the two on purpose). Running `seed_dev` again is safe: it resets those passwords and PINs, creates nothing twice and leaves existing prices alone.
 
 Text messages (codes, invitations) aren't sent in development. They are printed in the `runserver` window, and that's where you read the 6-digit codes.
 

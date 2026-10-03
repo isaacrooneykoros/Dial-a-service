@@ -1,5 +1,6 @@
-"""T10: create_business and seed_dev."""
+"""seed_dev (M1 T10; moved to the catalogue in M2 T05 with sample prices)."""
 
+from decimal import Decimal
 from io import StringIO
 
 import pytest
@@ -7,9 +8,11 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.db import connection
 
-from apps.accounts.management.commands.seed_dev import DEV_PASSWORD, SEED
-from apps.accounts.models import Role, User
+from apps.accounts.models import User
 from apps.branches.models import Branch, BranchMember
+from apps.catalog import selectors as catalog_selectors
+from apps.catalog.management.commands.seed_dev import DEV_PASSWORD, SEED
+from apps.catalog.models import PriceModifier, Service, ServicePrice
 from apps.core.tenant_context import tenant_context
 from apps.tenancy.models import Business, BusinessBranding, BusinessDomain
 
@@ -29,6 +32,9 @@ def counts(business: Business) -> dict[str, int]:
             "branches": Branch.objects.count(),
             "members": BranchMember.objects.count(),
             "branding": BusinessBranding.objects.count(),
+            "services": Service.objects.count(),
+            "prices": ServicePrice.objects.count(),
+            "modifiers": PriceModifier.objects.count(),
         }
 
 
@@ -38,7 +44,15 @@ class TestSeedDev:
         for spec in SEED:
             business = Business.objects.get(slug=spec.slug)
             assert BusinessDomain.objects.get(business=business).host == f"{spec.slug}.localhost"
-            assert counts(business) == {"users": 3, "branches": 1, "members": 3, "branding": 1}
+            assert counts(business) == {
+                "users": 3,
+                "branches": 1,
+                "members": 3,
+                "branding": 1,
+                "services": 8,  # the template list (D-57)
+                "prices": len(spec.prices),
+                "modifiers": len(spec.modifiers),
+            }
             with tenant_context(business.pk):
                 branding = BusinessBranding.objects.get()
                 assert branding.primary_color == spec.primary_color
@@ -49,6 +63,22 @@ class TestSeedDev:
                     assert user.check_password(DEV_PASSWORD)
                     assert user.pin_hash
                     assert user.pin_hash != person.pin  # stored hashed
+
+    def test_sample_prices_switch_their_services_on(self) -> None:
+        seed()
+        with tenant_context(Business.objects.get(slug="mamasafi").pk):
+            listed = {s.code: p for s, p in catalog_selectors.active_price_list()}
+            assert set(listed) == {"wash-fold", "wash-iron", "duvet", "shoes"}
+            assert (listed["wash-fold"].unit_price, listed["wash-fold"].minimum_charge) == (
+                Decimal("120.00"),
+                Decimal("500.00"),
+            )
+            assert PriceModifier.objects.get(name_en="Express").percent == Decimal("50.00")
+        with tenant_context(Business.objects.get(slug="cleanpro").pk):
+            listed = {s.code: p for s, p in catalog_selectors.active_price_list()}
+            assert set(listed) == {"wash-fold", "suit", "curtains"}
+            assert listed["wash-fold"].unit_price == Decimal("140.00")  # differs on purpose
+            assert PriceModifier.objects.get(name_en="Express").amount == Decimal("300.00")
 
     def test_brand_colours_differ(self) -> None:
         assert len({spec.primary_color for spec in SEED}) == len(SEED)
@@ -84,73 +114,3 @@ class TestSeedDev:
         with pytest.raises(CommandError, match="never runs in production"):
             seed()
         assert not Business.objects.filter(slug="mamasafi").exists()
-
-
-class TestCreateBusiness:
-    ARGS = (
-        "--name",
-        "Safi Wash",
-        "--slug",
-        "safiwash",
-        "--branch",
-        "Ngong Road",
-        "--owner-phone",
-        "0712345678",
-        "--owner-first-name",
-        "Grace",
-        "--owner-last-name",
-        "Wambui",
-    )
-
-    @pytest.fixture(autouse=True)
-    def owner_secrets(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setenv("DIAL_OWNER_PASSWORD", "kahawa-tamu-42")
-        monkeypatch.setenv("DIAL_OWNER_PIN", "2468")
-
-    def test_creates_the_business_with_its_owner(self) -> None:
-        out = StringIO()
-        call_command("create_business", *self.ARGS, stdout=out)
-        business = Business.objects.get(slug="safiwash")
-        assert BusinessDomain.objects.get(business=business).host == "safiwash.localhost"
-        with tenant_context(business.pk):
-            owner = User.objects.get()
-            assert owner.phone == "+254712345678"
-            assert owner.role == Role.OWNER
-            assert owner.check_password("kahawa-tamu-42")
-            assert owner.pin_hash
-            branch = Branch.objects.get()
-            assert branch.name == "Ngong Road"
-            assert BranchMember.objects.filter(branch=branch, user_id=owner.pk).exists()
-            assert BusinessBranding.objects.get().app_name == "Safi Wash"
-        assert "Created Safi Wash" in out.getvalue()
-        assert "kahawa" not in out.getvalue()
-
-    def test_refuses_an_address_name_in_use(self) -> None:
-        call_command("create_business", *self.ARGS, stdout=StringIO())
-        with pytest.raises(CommandError, match="already exists"):
-            call_command("create_business", *self.ARGS, stdout=StringIO())
-
-    def test_refuses_reserved_address_names(self) -> None:
-        args = list(self.ARGS)
-        args[3] = "admin"
-        with pytest.raises(CommandError, match="slug"):
-            call_command("create_business", *args, stdout=StringIO())
-
-    def test_a_weak_password_leaves_nothing_behind(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setenv("DIAL_OWNER_PASSWORD", "12345678")
-        with pytest.raises(CommandError):
-            call_command("create_business", *self.ARGS, stdout=StringIO())
-        assert not Business.objects.filter(slug="safiwash").exists()
-
-    def test_a_bad_phone_leaves_nothing_behind(self) -> None:
-        args = list(self.ARGS)
-        args[7] = "12345"
-        with pytest.raises(CommandError, match="Kenyan mobile number"):
-            call_command("create_business", *args, stdout=StringIO())
-        assert not Business.objects.filter(slug="safiwash").exists()
-
-    def test_a_light_brand_colour_is_refused(self) -> None:
-        with pytest.raises(CommandError, match="too light"):
-            call_command(
-                "create_business", *self.ARGS, "--primary-color", "#F5F5A0", stdout=StringIO()
-            )
