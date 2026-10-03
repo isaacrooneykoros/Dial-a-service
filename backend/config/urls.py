@@ -8,6 +8,7 @@ api_v1: list[URLPattern | URLResolver] = [
     path("", include("apps.core.api.urls")),
     path("", include("apps.tenancy.api.urls")),
     path("", include("apps.accounts.api.urls")),
+    path("", include("apps.catalog.api.urls")),
 ]
 
 urlpatterns: list[URLPattern | URLResolver] = [

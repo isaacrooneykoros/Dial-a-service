@@ -352,6 +352,411 @@ paths:
               schema:
                 $ref: '#/components/schemas/BusinessConfig'
           description: ''
+  /api/v1/console/catalog/categories:
+    get:
+      operationId: console_catalog_categories_list
+      summary: A-30 Categories, in price-list order
+      tags:
+      - console
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+          description: ''
+    post:
+      operationId: console_catalog_categories_create
+      summary: A-30 Add a category
+      tags:
+      - console
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+        required: true
+      security:
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+        '400':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '404':
+          description: Error envelope
+        '409':
+          description: Error envelope
+  /api/v1/console/catalog/categories/{id}/update:
+    post:
+      operationId: console_catalog_categories_update
+      summary: A-30 Rename a category, or switch it on or off
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - console
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryUpdateRequest'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+        '400':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '404':
+          description: Error envelope
+        '409':
+          description: Error envelope
+  /api/v1/console/catalog/modifiers:
+    get:
+      operationId: console_catalog_modifiers_list
+      summary: A-30 Modifiers (Express and chargeable preferences)
+      tags:
+      - console
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Modifier'
+          description: ''
+    post:
+      operationId: console_catalog_modifiers_create
+      summary: 'A-30 Add a modifier: a percentage per line or an amount once per order'
+      tags:
+      - console
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModifierCreateRequest'
+        required: true
+      security:
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Modifier'
+          description: ''
+        '400':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '404':
+          description: Error envelope
+        '409':
+          description: Error envelope
+  /api/v1/console/catalog/modifiers/{id}/update:
+    post:
+      operationId: console_catalog_modifiers_update
+      summary: A-30 Change a modifier (applies to new quotes only)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - console
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModifierUpdateRequest'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Modifier'
+          description: ''
+        '400':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '404':
+          description: Error envelope
+        '409':
+          description: Error envelope
+  /api/v1/console/catalog/services:
+    get:
+      operationId: console_catalog_services_list
+      summary: A-30 Services with their current business-wide price
+      tags:
+      - console
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Service'
+          description: ''
+    post:
+      operationId: console_catalog_services_create
+      summary: A-30 Add a service (switched off until priced)
+      tags:
+      - console
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceCreateRequest'
+        required: true
+      security:
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+          description: ''
+        '400':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '404':
+          description: Error envelope
+        '409':
+          description: Error envelope
+  /api/v1/console/catalog/services/{id}/activate:
+    post:
+      operationId: console_catalog_services_activate
+      summary: A-30 Switch a service on (needs a current price)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - console
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+          description: ''
+        '400':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '404':
+          description: Error envelope
+        '409':
+          description: Error envelope
+  /api/v1/console/catalog/services/{id}/deactivate:
+    post:
+      operationId: console_catalog_services_deactivate
+      summary: A-30 Switch a service off (never deleted)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - console
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+          description: ''
+        '400':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '404':
+          description: Error envelope
+        '409':
+          description: Error envelope
+  /api/v1/console/catalog/services/{id}/prices:
+    get:
+      operationId: console_catalog_prices_list
+      summary: A-30 Price versions, newest first (business-wide, or one branch's overrides)
+      parameters:
+      - in: query
+        name: branch_id
+        schema:
+          type: string
+      - name: cursor
+        required: false
+        in: query
+        description: The pagination cursor value.
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - console
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPriceList'
+          description: ''
+    post:
+      operationId: console_catalog_prices_set
+      summary: A-30 Set a price from now or a later time (a new version)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - console
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceCreateRequest'
+        required: true
+      security:
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Price'
+          description: ''
+        '400':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '404':
+          description: Error envelope
+        '409':
+          description: Error envelope
+  /api/v1/console/catalog/services/{id}/update:
+    post:
+      operationId: console_catalog_services_update
+      summary: A-30 Rename or move a service; how it's priced only until it has a
+        price
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - console
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceUpdateRequest'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+          description: ''
+        '400':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '404':
+          description: Error envelope
+        '409':
+          description: Error envelope
+  /api/v1/console/catalog/services/reorder:
+    post:
+      operationId: console_catalog_services_reorder
+      summary: A-30 Order the services (the staff app's quick-add buttons)
+      tags:
+      - console
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReorderRequest'
+        required: true
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Service'
+          description: ''
+        '400':
+          description: Error envelope
+        '403':
+          description: Error envelope
+        '404':
+          description: Error envelope
+        '409':
+          description: Error envelope
   /api/v1/console/devices:
     get:
       operationId: console_devices_list
@@ -794,6 +1199,56 @@ components:
       - branding
       - business
       - maintenance
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name_en:
+          type: string
+          maxLength: 120
+        name_sw:
+          type: string
+          default: ''
+          maxLength: 120
+        position:
+          type: integer
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+      required:
+      - id
+      - is_active
+      - name_en
+      - position
+    CategoryRequest:
+      type: object
+      properties:
+        name_en:
+          type: string
+          minLength: 1
+          maxLength: 120
+        name_sw:
+          type: string
+          default: ''
+          maxLength: 120
+      required:
+      - name_en
+    CategoryUpdateRequest:
+      type: object
+      properties:
+        name_en:
+          type: string
+          minLength: 1
+          maxLength: 120
+        name_sw:
+          type: string
+          maxLength: 120
+        is_active:
+          type: boolean
     CodeRequest:
       type: object
       properties:
@@ -1053,6 +1508,14 @@ components:
         * `manager` - Manager
         * `accountant` - Accountant
         * `staff` - Staff
+    KindEnum:
+      enum:
+      - express
+      - preference
+      type: string
+      description: |-
+        * `express` - Express
+        * `preference` - Preference
     LanguageEnum:
       enum:
       - en
@@ -1171,6 +1634,131 @@ components:
           type: string
       required:
       - message
+    Modifier:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name_en:
+          type: string
+          readOnly: true
+        name_sw:
+          type: string
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/KindEnum'
+          readOnly: true
+        percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        currency:
+          type: string
+          readOnly: true
+        applies_to_all:
+          type: boolean
+          readOnly: true
+        service_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          readOnly: true
+        position:
+          type: integer
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+      required:
+      - amount
+      - applies_to_all
+      - currency
+      - id
+      - is_active
+      - kind
+      - name_en
+      - name_sw
+      - percent
+      - position
+      - service_ids
+    ModifierCreateRequest:
+      type: object
+      properties:
+        name_en:
+          type: string
+          minLength: 1
+          maxLength: 120
+        name_sw:
+          type: string
+          default: ''
+          maxLength: 120
+        kind:
+          $ref: '#/components/schemas/KindEnum'
+        percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          nullable: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        applies_to_all:
+          type: boolean
+          default: true
+        service_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          nullable: true
+          maxItems: 500
+      required:
+      - kind
+      - name_en
+    ModifierUpdateRequest:
+      type: object
+      properties:
+        name_en:
+          type: string
+          minLength: 1
+          maxLength: 120
+        name_sw:
+          type: string
+          maxLength: 120
+        percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          nullable: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        applies_to_all:
+          type: boolean
+        service_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          maxItems: 500
+        is_active:
+          type: boolean
     PaginatedInvitationList:
       type: object
       required:
@@ -1190,6 +1778,25 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Invitation'
+    PaginatedPriceList:
+      type: object
+      required:
+      - results
+      properties:
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?cursor=cD00ODY%3D"
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?cursor=cj0xJnA9NDg3
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Price'
     PaginatedSessionList:
       type: object
       required:
@@ -1254,6 +1861,80 @@ components:
       required:
       - pin
       - user_id
+    Price:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        branch_id:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        unit_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        minimum_charge:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        currency:
+          type: string
+          readOnly: true
+        effective_from:
+          type: string
+          format: date-time
+          readOnly: true
+        effective_to:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - branch_id
+      - currency
+      - effective_from
+      - effective_to
+      - id
+      - minimum_charge
+      - unit_price
+    PriceCreateRequest:
+      type: object
+      properties:
+        unit_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        minimum_charge:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          default: '0.00'
+        effective_from:
+          type: string
+          format: date-time
+          nullable: true
+        branch_id:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - unit_price
+    PricingModelEnum:
+      enum:
+      - per_kg
+      - per_item
+      - flat
+      type: string
+      description: |-
+        * `per_kg` - Per kg
+        * `per_item` - Per item
+        * `flat` - Flat
     PublicInvitation:
       type: object
       description: 'What X-14 shows: "{Business} invited you to join as {role}" and
@@ -1275,6 +1956,18 @@ components:
       - phone
       - role
       - role_label
+    ReorderRequest:
+      type: object
+      properties:
+        service_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          maxItems: 500
+          minItems: 1
+      required:
+      - service_ids
     ResetConfirmRequest:
       type: object
       properties:
@@ -1342,6 +2035,101 @@ components:
       - id
       - last_initial
       - role
+    Service:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        category_id:
+          type: string
+          format: uuid
+          readOnly: true
+        code:
+          type: string
+          readOnly: true
+        name_en:
+          type: string
+          readOnly: true
+        name_sw:
+          type: string
+          readOnly: true
+        pricing_model:
+          allOf:
+          - $ref: '#/components/schemas/PricingModelEnum'
+          readOnly: true
+        unit:
+          allOf:
+          - $ref: '#/components/schemas/UnitEnum'
+          readOnly: true
+        position:
+          type: integer
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+        current_price:
+          allOf:
+          - $ref: '#/components/schemas/Price'
+          readOnly: true
+          nullable: true
+      required:
+      - category_id
+      - code
+      - current_price
+      - id
+      - is_active
+      - name_en
+      - name_sw
+      - position
+      - pricing_model
+      - unit
+    ServiceCreateRequest:
+      type: object
+      properties:
+        category_id:
+          type: string
+          format: uuid
+        code:
+          type: string
+          minLength: 1
+          maxLength: 32
+        name_en:
+          type: string
+          minLength: 1
+          maxLength: 120
+        name_sw:
+          type: string
+          default: ''
+          maxLength: 120
+        pricing_model:
+          $ref: '#/components/schemas/PricingModelEnum'
+        unit:
+          $ref: '#/components/schemas/UnitEnum'
+      required:
+      - category_id
+      - code
+      - name_en
+      - pricing_model
+      - unit
+    ServiceUpdateRequest:
+      type: object
+      properties:
+        category_id:
+          type: string
+          format: uuid
+        name_en:
+          type: string
+          minLength: 1
+          maxLength: 120
+        name_sw:
+          type: string
+          maxLength: 120
+        pricing_model:
+          $ref: '#/components/schemas/PricingModelEnum'
+        unit:
+          $ref: '#/components/schemas/UnitEnum'
     Session:
       type: object
       description: 'A-42: every signed-in session per person (device, browser, last
@@ -1436,6 +2224,18 @@ components:
       description: |-
         * `ok` - ok
         * `degraded` - degraded
+    UnitEnum:
+      enum:
+      - kg
+      - item
+      - pair
+      - set
+      type: string
+      description: |-
+        * `kg` - kg
+        * `item` - item
+        * `pair` - pair
+        * `set` - set
     Upload:
       type: object
       properties:

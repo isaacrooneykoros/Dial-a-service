@@ -31,6 +31,12 @@ All notable changes, grouped by milestone. Updated at the end of each milestone.
   - **How it arrives:** `tenancy.create_business` records a `business.created` outbox event, and the catalogue's handler installs the list after commit. Every way of creating a business is covered, and the app dependencies still point one way.
   - **Safe to repeat:** existing categories and services are matched by name and code, so nothing is duplicated and the owner's changes are kept.
   - **`seed_dev`** moves to the catalogue app (the highest app it uses) and gives the two dev businesses different sample prices and an Express modifier (50% at Mama Safi, KSh 300 at CleanPro).
+- Console catalogue API (T06, for A-30 in M5): `/api/v1/console/catalog/`.
+  - **Endpoints:** categories (list, add, update); services (list with the current business-wide price, add, update, activate, deactivate, reorder); price versions (list newest first, business-wide or per branch, with cursor pagination; set a price); modifiers (list, add, update).
+  - **Access:** owners and managers only (D-60).
+  - **Conventions:** idempotency keys on every POST; refusals come back in the error envelope with the reason on the field; every change is audited against the person.
+  - **Money:** amounts travel as text; a new shared `MoneyField` and `PercentField` refuse JSON numbers with "Send amounts as text, like \"120.00\"".
+  - `openapi.yaml` and the frontend client are regenerated.
 
 ## Milestone 1: Foundation (complete 2026-10-03; staging configured, not deployed; report in `docs/plans/M1-report.md`)
 

@@ -248,6 +248,180 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/console/catalog/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A-30 Categories, in price-list order */
+        get: operations["console_catalog_categories_list"];
+        put?: never;
+        /** A-30 Add a category */
+        post: operations["console_catalog_categories_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/console/catalog/categories/{id}/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A-30 Rename a category, or switch it on or off */
+        post: operations["console_catalog_categories_update"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/console/catalog/modifiers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A-30 Modifiers (Express and chargeable preferences) */
+        get: operations["console_catalog_modifiers_list"];
+        put?: never;
+        /** A-30 Add a modifier: a percentage per line or an amount once per order */
+        post: operations["console_catalog_modifiers_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/console/catalog/modifiers/{id}/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A-30 Change a modifier (applies to new quotes only) */
+        post: operations["console_catalog_modifiers_update"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/console/catalog/services": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A-30 Services with their current business-wide price */
+        get: operations["console_catalog_services_list"];
+        put?: never;
+        /** A-30 Add a service (switched off until priced) */
+        post: operations["console_catalog_services_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/console/catalog/services/{id}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A-30 Switch a service on (needs a current price) */
+        post: operations["console_catalog_services_activate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/console/catalog/services/{id}/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A-30 Switch a service off (never deleted) */
+        post: operations["console_catalog_services_deactivate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/console/catalog/services/{id}/prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A-30 Price versions, newest first (business-wide, or one branch's overrides) */
+        get: operations["console_catalog_prices_list"];
+        put?: never;
+        /** A-30 Set a price from now or a later time (a new version) */
+        post: operations["console_catalog_prices_set"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/console/catalog/services/{id}/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A-30 Rename or move a service; how it's priced only until it has a price */
+        post: operations["console_catalog_services_update"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/console/catalog/services/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A-30 Order the services (the staff app's quick-add buttons) */
+        post: operations["console_catalog_services_reorder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/console/devices": {
         parameters: {
             query?: never;
@@ -533,6 +707,25 @@ export interface components {
             branding: components["schemas"]["ConfigBranding"];
             maintenance: components["schemas"]["Maintenance"];
         };
+        Category: {
+            /** Format: uuid */
+            readonly id: string;
+            name_en: string;
+            /** @default  */
+            name_sw: string;
+            readonly position: number;
+            readonly is_active: boolean;
+        };
+        CategoryRequest: {
+            name_en: string;
+            /** @default  */
+            name_sw: string;
+        };
+        CategoryUpdateRequest: {
+            name_en?: string;
+            name_sw?: string;
+            is_active?: boolean;
+        };
         CodeRequest: {
             code: string;
         };
@@ -629,6 +822,12 @@ export interface components {
          */
         InvitationCreateRoleEnum: "manager" | "accountant" | "staff";
         /**
+         * @description * `express` - Express
+         *     * `preference` - Preference
+         * @enum {string}
+         */
+        KindEnum: "express" | "preference";
+        /**
          * @description * `en` - English
          *     * `sw` - Kiswahili
          * @enum {string}
@@ -676,6 +875,46 @@ export interface components {
         Message: {
             message: string;
         };
+        Modifier: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly name_en: string;
+            readonly name_sw: string;
+            readonly kind: components["schemas"]["KindEnum"];
+            /** Format: decimal */
+            readonly percent: string | null;
+            /** Format: decimal */
+            readonly amount: string | null;
+            readonly currency: string;
+            readonly applies_to_all: boolean;
+            readonly service_ids: string[];
+            readonly position: number;
+            readonly is_active: boolean;
+        };
+        ModifierCreateRequest: {
+            name_en: string;
+            /** @default  */
+            name_sw: string;
+            kind: components["schemas"]["KindEnum"];
+            /** Format: decimal */
+            percent?: string | null;
+            /** Format: decimal */
+            amount?: string | null;
+            /** @default true */
+            applies_to_all: boolean;
+            service_ids?: string[] | null;
+        };
+        ModifierUpdateRequest: {
+            name_en?: string;
+            name_sw?: string;
+            /** Format: decimal */
+            percent?: string | null;
+            /** Format: decimal */
+            amount?: string | null;
+            applies_to_all?: boolean;
+            service_ids?: string[];
+            is_active?: boolean;
+        };
         PaginatedInvitationList: {
             /**
              * Format: uri
@@ -688,6 +927,19 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["Invitation"][];
+        };
+        PaginatedPriceList: {
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?cursor=cD00ODY%3D"
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?cursor=cj0xJnA9NDg3
+             */
+            previous?: string | null;
+            results: components["schemas"]["Price"][];
         };
         PaginatedSessionList: {
             /**
@@ -717,6 +969,41 @@ export interface components {
             user_id: string;
             pin: string;
         };
+        Price: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly branch_id: string | null;
+            /** Format: decimal */
+            readonly unit_price: string;
+            /** Format: decimal */
+            readonly minimum_charge: string;
+            readonly currency: string;
+            /** Format: date-time */
+            readonly effective_from: string;
+            /** Format: date-time */
+            readonly effective_to: string | null;
+        };
+        PriceCreateRequest: {
+            /** Format: decimal */
+            unit_price: string;
+            /**
+             * Format: decimal
+             * @default 0.00
+             */
+            minimum_charge: string;
+            /** Format: date-time */
+            effective_from?: string | null;
+            /** Format: uuid */
+            branch_id?: string | null;
+        };
+        /**
+         * @description * `per_kg` - Per kg
+         *     * `per_item` - Per item
+         *     * `flat` - Flat
+         * @enum {string}
+         */
+        PricingModelEnum: "per_kg" | "per_item" | "flat";
         /** @description What X-14 shows: "{Business} invited you to join as {role}" and the phone. */
         PublicInvitation: {
             business_name: string;
@@ -724,6 +1011,9 @@ export interface components {
             role_label: string;
             first_name: string;
             phone: string;
+        };
+        ReorderRequest: {
+            service_ids: string[];
         };
         ResetConfirmRequest: {
             reset_token: string;
@@ -753,6 +1043,38 @@ export interface components {
             first_name: string;
             readonly last_initial: string;
             role: string;
+        };
+        Service: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly category_id: string;
+            readonly code: string;
+            readonly name_en: string;
+            readonly name_sw: string;
+            readonly pricing_model: components["schemas"]["PricingModelEnum"];
+            readonly unit: components["schemas"]["UnitEnum"];
+            readonly position: number;
+            readonly is_active: boolean;
+            readonly current_price: components["schemas"]["Price"] | null;
+        };
+        ServiceCreateRequest: {
+            /** Format: uuid */
+            category_id: string;
+            code: string;
+            name_en: string;
+            /** @default  */
+            name_sw: string;
+            pricing_model: components["schemas"]["PricingModelEnum"];
+            unit: components["schemas"]["UnitEnum"];
+        };
+        ServiceUpdateRequest: {
+            /** Format: uuid */
+            category_id?: string;
+            name_en?: string;
+            name_sw?: string;
+            pricing_model?: components["schemas"]["PricingModelEnum"];
+            unit?: components["schemas"]["UnitEnum"];
         };
         /** @description A-42: every signed-in session per person (device, browser, last active). */
         Session: {
@@ -795,6 +1117,14 @@ export interface components {
          * @enum {string}
          */
         StatusEnum: "ok" | "degraded";
+        /**
+         * @description * `kg` - kg
+         *     * `item` - item
+         *     * `pair` - pair
+         *     * `set` - set
+         * @enum {string}
+         */
+        UnitEnum: "kg" | "item" | "pair" | "set";
         Upload: {
             /** Format: uuid */
             id: string;
@@ -1437,6 +1767,604 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["BusinessConfig"];
                 };
+            };
+        };
+    };
+    console_catalog_categories_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Category"][];
+                };
+            };
+        };
+    };
+    console_catalog_categories_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Category"];
+                };
+            };
+            /** @description Error envelope */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    console_catalog_categories_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CategoryUpdateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Category"];
+                };
+            };
+            /** @description Error envelope */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    console_catalog_modifiers_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Modifier"][];
+                };
+            };
+        };
+    };
+    console_catalog_modifiers_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModifierCreateRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Modifier"];
+                };
+            };
+            /** @description Error envelope */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    console_catalog_modifiers_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ModifierUpdateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Modifier"];
+                };
+            };
+            /** @description Error envelope */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    console_catalog_services_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Service"][];
+                };
+            };
+        };
+    };
+    console_catalog_services_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ServiceCreateRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Service"];
+                };
+            };
+            /** @description Error envelope */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    console_catalog_services_activate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Service"];
+                };
+            };
+            /** @description Error envelope */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    console_catalog_services_deactivate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Service"];
+                };
+            };
+            /** @description Error envelope */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    console_catalog_prices_list: {
+        parameters: {
+            query?: {
+                branch_id?: string;
+                /** @description The pagination cursor value. */
+                cursor?: string;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedPriceList"];
+                };
+            };
+        };
+    };
+    console_catalog_prices_set: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PriceCreateRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Price"];
+                };
+            };
+            /** @description Error envelope */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    console_catalog_services_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ServiceUpdateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Service"];
+                };
+            };
+            /** @description Error envelope */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    console_catalog_services_reorder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Service"][];
+                };
+            };
+            /** @description Error envelope */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error envelope */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
