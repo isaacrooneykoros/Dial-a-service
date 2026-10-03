@@ -1,0 +1,12 @@
+{
+  "areas": {
+    "staff": "Staff app",
+    "console": "Business console",
+    "rider": "Rider app",
+    "customer": "Customer app",
+    "public": "Order page"
+  },
+  "placeholder": {
+    "coming_soon": "This part of the app arrives in a later update."
+  }
+}

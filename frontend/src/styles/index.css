@@ -1,0 +1,78 @@
+@import "tailwindcss";
+@import "./tokens.css";
+
+/* Tailwind reads the design tokens, so bg-brand-primary follows the business's
+   brand. Components use these names, never raw colour values (ESLint rule). */
+@theme inline {
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-on-primary: var(--brand-on-primary);
+  --color-brand-accent: var(--brand-accent);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-border: var(--border);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
+
+  /* Type scale (px / line height): 28/34, 22/28, 18/24, 16/24, 14/20, 12/16 */
+  --text-page-title: 28px;
+  --text-page-title--line-height: 34px;
+  --text-section-title: 22px;
+  --text-section-title--line-height: 28px;
+  --text-card-title: 18px;
+  --text-card-title--line-height: 24px;
+  --text-body: 16px;
+  --text-body--line-height: 24px;
+  --text-secondary: 14px;
+  --text-secondary--line-height: 20px;
+  --text-caption: 12px;
+  --text-caption--line-height: 16px;
+
+  /* Corners: 8 for controls, 12 for cards and sheets */
+  --radius-control: 8px;
+  --radius-card: 12px;
+
+  --shadow-sheet: var(--shadow-sheet);
+}
+
+html {
+  font-family: var(--font-body);
+  color: var(--text);
+  background: var(--surface-muted);
+  /* Money and weights line up in columns */
+  font-variant-numeric: tabular-nums;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-heading);
+}
+
+/* Inputs at least 16px so phones don't zoom in */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
+/* A visible focus ring on every interactive element (WCAG 2.1 AA) */
+:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

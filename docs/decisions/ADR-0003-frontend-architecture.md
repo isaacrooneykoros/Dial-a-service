@@ -124,3 +124,12 @@ One frontend build must serve every business, branded at run time. It has five r
 - **Separate builds per area:** more CI and deploy work for no user benefit, since lazy chunks give the same size result.
 - **Tokens in `localStorage`:** readable by any injected script.
 - **Runtime Google Fonts:** forbidden by the design (offline Android build, no third-party dependency).
+
+## Dependencies as built (T09a, owner-approved 2026-10-03)
+
+Pinned exactly in `frontend/package.json` and `package-lock.json`.
+
+- **Approved stack (`CLAUDE.md` §4):** React 19.3.0, Vite 8.3.2, React Router 8.4.0, TanStack Query 5.104.0, react-hook-form 7.89.0, zod 4.6.5, i18next 26.4.2, react-i18next 17.0.15, openapi-typescript 7.13.0, openapi-fetch 0.17.0, Tailwind CSS 4.3.3, lucide-react 1.49.0, Vitest 5.0.3, Testing Library (React 16.3.3), ESLint 10.11.0, Prettier 3.9.9.
+- **Helpers the approved tools need (owner-approved):** `@vitejs/plugin-react`, `@tailwindcss/vite`, `@hookform/resolvers`, `jsdom`, `@testing-library/jest-dom`, `@testing-library/user-event`, `typescript-eslint`, `eslint-plugin-react-hooks`, `@types/react`, `@types/react-dom`, `@types/node` (types for the Vite config).
+- **TypeScript 5.9.3, not 7.x:** typescript-eslint 8.71 supports TypeScript below 6.1, and openapi-typescript 7.13 needs 5.x. Revisit when both support 7.
+- **Node 22.22.2 or newer (still Node 22 LTS):** React Router 8 and jsdom 30 require it. `.nvmrc` pins 22.23.2; CI uses that.

@@ -1,0 +1,44 @@
+/* Design tokens (10-screens-shared.md, "Design system"; ADR-0003 section 6).
+   Only the brand tokens change per business: X-01 sets --brand-primary,
+   --brand-accent and --brand-on-primary from /business/config. Everything else
+   is fixed, so status colours always mean the same thing. */
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/inter-latin-variable.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  font-style: normal;
+  font-weight: 600 800;
+  font-display: swap;
+  src: url("./fonts/plus-jakarta-sans-latin-variable.woff2") format("woff2");
+}
+
+:root {
+  /* Brand (per business; defaults are the proposed Dial A Service colours, OPEN.md D-07) */
+  --brand-primary: #0f6b5c;
+  --brand-on-primary: #ffffff;
+  --brand-accent: #f2a900;
+
+  /* Fixed */
+  --surface: #ffffff;
+  --surface-muted: #f4f6f5;
+  --text: #1b1f1d;
+  --text-muted: #5b635f;
+  --border: #dce1de;
+  --success: #1e7f4f;
+  --warning: #a86400;
+  --danger: #c23b30;
+  --info: #2458b3;
+
+  --font-heading: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+
+  /* One shadow level, only for bottom sheets and the sticky action bar */
+  --shadow-sheet: 0 -4px 16px rgb(27 31 29 / 0.12);
+}
