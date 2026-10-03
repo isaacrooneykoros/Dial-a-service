@@ -16,7 +16,7 @@ It runs on every push to `main` and every pull request.
 
 - **Backend:**
   - a `postgres:16` service container;
-  - `scripts/db/setup_roles.py --create-database` creates `dial_owner`, `dial_app` (NOBYPASSRLS) and `dial_platform` (BYPASSRLS), with throwaway passwords from `DIAL_*_PASSWORD`, and verifies them;
+  - `scripts/db/setup_roles.py --create-database` creates `dial_owner`, `dial_app` (NOBYPASSRLS) and `dial_platform` (BYPASSRLS), with random passwords generated for the run, and verifies them;
   - migrations as `dial_owner` (`scripts/migrate.sh`) and a check for missing migrations;
   - ruff, ruff format and mypy;
   - `check_openapi` (the committed schema must match the code);
@@ -33,7 +33,7 @@ It runs on every push to `main` and every pull request.
   - `pip-audit --strict` over the pinned backend requirements (`dev.txt` and `prod.txt`);
   - `npm audit --audit-level=high` over the frontend lockfile.
 
-The CI database passwords and Django secret key are written in the workflow on purpose. The database exists only inside one job and can't be reached from outside, so these values protect nothing. Real secrets never go in the workflow (`CLAUDE.md` §6.7).
+The CI database passwords and the Django secret key are generated with `openssl rand` at the start of each run and masked in the logs. Nothing password-like is committed, which keeps secret scanners (GitGuardian) quiet. The Postgres service container uses `trust` authentication; it can only be reached from inside the job. Real secrets never go in the workflow (`CLAUDE.md` §6.7).
 
 ### 2. pip-audit as a CI-only tool
 

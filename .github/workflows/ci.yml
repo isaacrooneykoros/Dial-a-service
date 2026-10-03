@@ -27,20 +27,12 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_PASSWORD: postgres
+          # The container is reachable only from this job; the setup step below
+          # connects as postgres without a password and creates the real roles.
+          POSTGRES_HOST_AUTH_METHOD: trust
         ports: ["5432:5432"]
         options: >-
           --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 20
-    env:
-      # Throwaway values for a database that exists only for this run. Not secrets:
-      # nothing outside this job can reach it.
-      DIAL_OWNER_PASSWORD: ci-owner-password
-      DIAL_APP_PASSWORD: ci-app-password
-      DIAL_PLATFORM_PASSWORD: ci-platform-password
-      DJANGO_SECRET_KEY: ci-only-key-not-used-anywhere-else-0123456789abcdef
-      DATABASE_MIGRATION_URL: postgres://dial_owner:ci-owner-password@localhost:5432/dialaservice
-      DATABASE_URL: postgres://dial_app:ci-app-password@localhost:5432/dialaservice
-      PLATFORM_DATABASE_URL: postgres://dial_platform:ci-platform-password@localhost:5432/dialaservice
     steps:
       - uses: actions/checkout@v7
 
@@ -53,10 +45,28 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements/dev.txt
 
+      - name: Random passwords and keys for this run
+        # Generated fresh each run and masked in the logs, so nothing password-like
+        # is committed. The database lives only inside this job.
+        run: |
+          secret() { openssl rand -hex 24; }
+          owner=$(secret); app=$(secret); platform=$(secret); key=$(secret)$(secret)
+          for value in "$owner" "$app" "$platform" "$key"; do echo "::add-mask::$value"; done
+          db=localhost:5432/dialaservice
+          {
+            echo "DIAL_OWNER_PASSWORD=$owner"
+            echo "DIAL_APP_PASSWORD=$app"
+            echo "DIAL_PLATFORM_PASSWORD=$platform"
+            echo "DJANGO_SECRET_KEY=$key"
+            echo "DATABASE_MIGRATION_URL=postgres://dial_owner:$owner@$db"
+            echo "DATABASE_URL=postgres://dial_app:$app@$db"
+            echo "PLATFORM_DATABASE_URL=postgres://dial_platform:$platform@$db"
+          } >> "$GITHUB_ENV"
+
       - name: Database roles (dial_owner, dial_app, dial_platform) and grants
         run: >-
           python -m scripts.db.setup_roles
-          --admin-url postgres://postgres:postgres@localhost:5432/postgres
+          --admin-url postgres://postgres@localhost:5432/postgres
           --create-database dialaservice --no-write-env
 
       - name: Migrations as dial_owner
