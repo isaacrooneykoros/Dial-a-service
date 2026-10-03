@@ -8,5 +8,10 @@
   },
   "placeholder": {
     "coming_soon": "This part of the app arrives in a later update."
+  },
+  "time": {
+    "minutes_ago_one": "{{count}} min ago",
+    "minutes_ago_other": "{{count}} min ago",
+    "just_now": "Just now"
   }
 }
