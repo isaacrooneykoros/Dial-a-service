@@ -8,6 +8,14 @@ All notable changes, grouped by milestone. Updated at the end of each milestone.
 
 - Catalogue models (T01): `ServiceCategory`, `Service` (per kg, per item or flat; units kg, item, pair, set; D-58), `ServicePrice` (business-wide or per-branch versions with an effective period), `PriceModifier` (a percent or an amount; all services or a chosen list, D-55) and its service links. The database itself refuses overlapping price versions (an exclusion constraint using Postgres's built-in `btree_gist` extension), a unit that doesn't fit the pricing model, prices of zero or less, and a modifier with both or neither of percent and amount. RLS on every table. `django.contrib.postgres` installed.
 - Money settings (T02): `vat.registered`, `vat.rate` (16.00, D-53), `vat.prices_include_vat` (safe default yes, D-61 to confirm) and `discounts.max_percent` (0.00, so no discounts until set, D-56). Percentages are stored as decimal strings, never JSON numbers, and checked to 0–100 with at most 2 decimals. `decimal_setting()` reads them as exact decimals.
+- Pricing engine (T03): `apps/catalog/pricing.py`, the only place prices are calculated. It's pure (no database) and uses exact decimals throughout.
+  - **Line base:** per kg is max(minimum, kg × rate); per item is quantity × price; flat is the price.
+  - **Modifiers:** percentage modifiers add up per line (D-54) and apply only to their services (D-55). A flat modifier is added once per order when a line qualifies.
+  - **Discount:** a percent or an amount off the laundry total, refused over the cap and never below zero (D-56).
+  - **VAT (D-53):** on the amount after the discount; added on top, or "of which" taken from the rounded total paid.
+  - **Rounding:** line amounts to the cent, half-up. The total to whole shillings, half-up, with the rounding difference kept.
+  - **Snapshots:** each line names the price version it used.
+  - **Tests:** 73 hand-worked tests, 100% line and branch coverage.
 
 ## Milestone 1: Foundation (complete 2026-10-03; staging configured, not deployed; report in `docs/plans/M1-report.md`)
 
