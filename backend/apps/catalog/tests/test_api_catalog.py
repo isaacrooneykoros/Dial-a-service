@@ -409,3 +409,79 @@ class TestModifiers:
             method="post",
             data={"name_en": "Renamed"},
         )
+
+
+IMPORT_CSV = "service,category,pricing_model,price,minimum\nCurtains,Home,per_item,600,\n"
+
+
+class TestImport:
+    def test_the_template_downloads_as_csv(self, business_a: Business) -> None:
+        make_service(
+            business_a, code="duvet", name_en="Duvets", pricing_model="per_item", unit="item"
+        )
+        response = as_role(business_a).get(f"{BASE}/import/template")
+        assert response.status_code == 200
+        assert response["Content-Type"].startswith("text/csv")
+        assert 'filename="price-list.csv"' in response["Content-Disposition"]
+        assert response.content.decode().splitlines()[0] == (
+            "service,category,pricing_model,price,minimum,unit"
+        )
+
+    def test_preview_then_apply(self, business_a: Business) -> None:
+        client = as_role(business_a, Role.MANAGER)
+        preview = client.post(f"{BASE}/import/preview", {"csv": IMPORT_CSV}, format="json")
+        assert preview.status_code == 200
+        body = preview.json()
+        assert body["counts"] == {"new": 1, "changed": 0, "unchanged": 0, "invalid": 0}
+        assert body["rows"][0]["status"] == "new"
+        applied = client.post(
+            f"{BASE}/import/apply",
+            {"csv": IMPORT_CSV, "fingerprint": body["fingerprint"]},
+            format="json",
+        )
+        assert applied.status_code == 200
+        with tenant_context(business_a.id):
+            curtains = Service.objects.get(code="curtains")
+            assert curtains.is_active is False
+            assert ServicePrice.objects.get(service=curtains).unit_price == Decimal("600.00")
+
+    def test_invalid_rows_carry_a_message(self, business_a: Business) -> None:
+        text = 'service,category,pricing_model,price\nIroning,Special,per_item,"1,200"\n'
+        response = as_role(business_a).post(f"{BASE}/import/preview", {"csv": text}, format="json")
+        row = response.json()["rows"][0]
+        assert (row["status"], row["problem"]) == ("invalid", "price_amount_has_comma")
+        assert row["message"] == "Write prices without commas, like 1200.00."
+
+    def test_a_stale_preview_is_refused(self, business_a: Business) -> None:
+        response = as_role(business_a).post(
+            f"{BASE}/import/apply", {"csv": IMPORT_CSV, "fingerprint": "0" * 64}, format="json"
+        )
+        assert response.status_code == 409
+        assert response.json()["code"] == "changed_since_preview"
+
+    def test_a_file_that_cannot_be_imported(self, business_a: Business) -> None:
+        response = as_role(business_a).post(
+            f"{BASE}/import/preview", {"csv": "service,price\nDuvets,450\n"}, format="json"
+        )
+        assert response.status_code == 400
+        assert response.json()["message"] == (
+            "The file needs these columns: category, pricing_model."
+        )
+
+    @pytest.mark.parametrize("role", [Role.ACCOUNTANT, Role.STAFF])
+    def test_owners_and_managers_only(self, business_a: Business, role: str) -> None:
+        client = as_role(business_a, role)
+        assert client.get(f"{BASE}/import/template").status_code == 403
+        response = client.post(f"{BASE}/import/preview", {"csv": IMPORT_CSV}, format="json")
+        assert response.status_code == 403
+
+    def test_a_preview_sees_only_its_own_business(
+        self, business_a: Business, business_b: Business
+    ) -> None:
+        make_service(
+            business_b, code="curtains", name_en="Curtains", pricing_model="per_item", unit="item"
+        )
+        response = as_role(business_a).post(
+            f"{BASE}/import/preview", {"csv": IMPORT_CSV}, format="json"
+        )
+        assert response.json()["rows"][0]["status"] == "new"  # B's Curtains is invisible here

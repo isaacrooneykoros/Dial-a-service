@@ -37,6 +37,18 @@ All notable changes, grouped by milestone. Updated at the end of each milestone.
   - **Conventions:** idempotency keys on every POST; refusals come back in the error envelope with the reason on the field; every change is audited against the person.
   - **Money:** amounts travel as text; a new shared `MoneyField` and `PercentField` refuse JSON numbers with "Send amounts as text, like \"120.00\"".
   - `openapi.yaml` and the frontend client are regenerated.
+- CSV price import (T07, A-31): `GET /console/catalog/import/template` (your current price list as CSV, ready to edit), `POST …/import/preview` and `POST …/import/apply`.
+  - **Columns:** service, category, pricing_model, price, and optionally minimum and unit. Header names are forgiving; Excel's byte-order mark and semicolon-separated files work.
+  - **Matching:** rows match a service by code, or by name when it's unique.
+  - **Each row** is new, changed (old → new), unchanged or invalid, with a message saying what to fix. A comma in a price is refused ("1,200" is ambiguous).
+  - **Existing services** keep their pricing model, unit and category. New services and categories are created switched off.
+  - **Apply** needs the preview's fingerprint, so a price list changed in the meantime is refused (409). It's all or nothing, and audited.
+  - **Limits:** 1 MB and 1,000 rows. Importing the template unchanged changes nothing.
+- Quotes (T08): `POST /api/v1/quotes` for owners, managers and staff.
+  - **In:** lines (service, and quantity as text), optional modifiers, a branch and a discount.
+  - **Out:** the full pricing-engine breakdown, amounts as text. Nothing is saved.
+  - **Rules:** branch overrides apply. Switched-off, unpriced or another business's services are refused on their line. Discounts need the person's "give discounts" right (owners and managers always have it) and a reason, within the cap. VAT follows the business settings.
+  - **Shared changes:** a new `QuantityField` takes quantities only as text. The cross-business token helper can send a request body.
 
 ## Milestone 1: Foundation (complete 2026-10-03; staging configured, not deployed; report in `docs/plans/M1-report.md`)
 

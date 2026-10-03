@@ -1,10 +1,11 @@
 from django.urls import path
 
-from apps.catalog.api import views
+from apps.catalog.api import quote_views, views
 
 PREFIX = "console/catalog"
 
 urlpatterns = [
+    path("quotes", quote_views.QuoteView.as_view(), name="quotes"),
     path(f"{PREFIX}/categories", views.CategoriesView.as_view(), name="catalog-categories"),
     path(
         f"{PREFIX}/categories/<uuid:pk>/update",
@@ -38,6 +39,21 @@ urlpatterns = [
         name="catalog-service-prices",
     ),
     path(f"{PREFIX}/modifiers", views.ModifiersView.as_view(), name="catalog-modifiers"),
+    path(
+        f"{PREFIX}/import/template",
+        views.ImportTemplateView.as_view(),
+        name="catalog-import-template",
+    ),
+    path(
+        f"{PREFIX}/import/preview",
+        views.ImportPreviewView.as_view(),
+        name="catalog-import-preview",
+    ),
+    path(
+        f"{PREFIX}/import/apply",
+        views.ImportApplyView.as_view(),
+        name="catalog-import-apply",
+    ),
     path(
         f"{PREFIX}/modifiers/<uuid:pk>/update",
         views.ModifierUpdateView.as_view(),

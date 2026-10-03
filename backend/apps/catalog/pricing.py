@@ -165,7 +165,8 @@ class Quote:
 # --- The calculation --------------------------------------------------------------------
 
 
-def _check_quantity(line: LineInput) -> None:
+def check_quantity(line: LineInput) -> None:
+    """Refuse a quantity its pricing model can't take (also used to point at the line)."""
     quantity, model = line.quantity, line.price.pricing_model
     if model == "per_kg":
         if not ZERO < quantity <= MAX_KG or quantity != quantity.quantize(CENT):
@@ -180,7 +181,7 @@ def _check_quantity(line: LineInput) -> None:
 
 
 def _price_line(line: LineInput, percent_modifiers: Sequence[ModifierSnapshot]) -> LineResult:
-    _check_quantity(line)
+    check_quantity(line)
     price = line.price
     if price.pricing_model == "per_kg":
         raw = line.quantity * price.unit_price

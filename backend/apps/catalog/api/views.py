@@ -5,12 +5,15 @@ serializers, rules by apps/catalog/services.py. A refused change comes back as t
 error envelope with the reason on the field it's about.
 """
 
+from dataclasses import asdict
 from typing import Any
 from uuid import UUID
 
 from django.db.models import QuerySet
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import generics, status
 from rest_framework.request import Request
@@ -18,7 +21,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.api.permissions import IsOwnerOrManager
-from apps.catalog import selectors, services
+from apps.catalog import imports, selectors, services
 from apps.catalog.api import serializers as s
 from apps.catalog.models import PriceModifier, Service, ServiceCategory, ServicePrice
 from apps.catalog.services import CatalogError
@@ -327,3 +330,109 @@ class ModifierUpdateView(Console):
         except CatalogError as exc:
             return catalog_error(exc)
         return Response(s.ModifierSerializer(modifier_data(modifier)).data)
+
+
+# --- CSV import (A-31) ----------------------------------------------------------------------
+
+ROW_MESSAGES = {
+    "service_required": _("Give the service's name or code."),
+    "duplicate_row": _("This service is already in the file on another line."),
+    "bad_pricing_model": _("Write per_kg, per_item or flat."),
+    "price_amount_has_comma": _("Write prices without commas, like 1200.00."),
+    "price_bad_amount": _("Write the price as a number above 0, like 120 or 120.50."),
+    "minimum_amount_has_comma": _("Write the minimum without commas, like 500.00."),
+    "minimum_bad_amount": _(
+        "Write the minimum as a number, like 500 or 500.00, or leave it empty."
+    ),
+    "minimum_per_kg_only": _("A minimum charge is only for per kg services."),
+    "ambiguous_service": _("Several services have this name. Use the service's code instead."),
+    "pricing_model_differs": _(
+        "This service is priced differently in your price list. Create a new service for it."
+    ),
+    "unit_differs": _("This service uses a different unit in your price list."),
+    "unit_mismatch": _("Per kg services use kg; others use item, pair or set."),
+    "category_required": _("Give a category for this new service."),
+}
+
+FILE_MESSAGES = {
+    "too_big": _("The file is too big. Import at most 1 MB at a time."),
+    "empty": _("The file has no prices in it."),
+    "missing_columns": _("The file needs these columns: %(columns)s."),
+    "too_many_rows": _("Import at most %(max_rows)d services at a time."),
+    "unreadable": _("We couldn't read this file. Save it as CSV and try again."),
+    "changed_since_preview": _(
+        "The price list changed since you previewed this file. Preview it again."
+    ),
+    "has_invalid_rows": _("Fix the %(count)d rows marked invalid, then preview again."),
+}
+
+
+def import_error(exc: imports.CatalogImportError) -> Response:
+    detail = dict(exc.detail)
+    if "columns" in detail:
+        detail["columns"] = ", ".join(detail["columns"])
+    template = str(FILE_MESSAGES[exc.code])
+    message = template % detail if detail else template
+    status_code = 409 if exc.code == "changed_since_preview" else 400
+    return Response(envelope(exc.code, message, {"csv": [message]}), status=status_code)
+
+
+def preview_data(preview: imports.Preview) -> dict[str, Any]:
+    rows = [
+        {**asdict(row), "message": str(ROW_MESSAGES[row.problem]) if row.problem else ""}
+        for row in preview.rows
+    ]
+    return {"rows": rows, "counts": preview.counts, "fingerprint": preview.fingerprint}
+
+
+class ImportTemplateView(Console):
+    @extend_schema(
+        operation_id="console_catalog_import_template",
+        summary="A-31 The CSV template: your current price list, ready to edit",
+        responses={(200, "text/csv"): OpenApiTypes.STR},
+    )
+    def get(self, request: Request) -> HttpResponse:
+        response = HttpResponse(imports.template_csv(), content_type="text/csv; charset=utf-8")
+        response["Content-Disposition"] = 'attachment; filename="price-list.csv"'
+        return response
+
+
+class ImportPreviewView(Console):
+    @extend_schema(
+        operation_id="console_catalog_import_preview",
+        summary="A-31 Preview a CSV import: each row new, changed, unchanged or invalid",
+        request=s.ImportPreviewRequestSerializer,
+        responses={200: s.ImportPreviewSerializer, **ERRORS},
+    )
+    def post(self, request: Request) -> Response:
+        data = s.ImportPreviewRequestSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        try:
+            preview = imports.preview(data.validated_data["csv"])
+        except imports.CatalogImportError as exc:
+            return import_error(exc)
+        return Response(s.ImportPreviewSerializer(preview_data(preview)).data)
+
+
+class ImportApplyView(Console):
+    @extend_schema(
+        operation_id="console_catalog_import_apply",
+        summary="A-31 Apply a previewed import as new price versions (all or nothing)",
+        request=s.ImportApplyRequestSerializer,
+        responses={200: s.ImportPreviewSerializer, **ERRORS},
+    )
+    def post(self, request: Request) -> Response:
+        data = s.ImportApplyRequestSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        try:
+            applied = imports.apply(
+                data.validated_data["csv"],
+                fingerprint=data.validated_data["fingerprint"],
+                effective_from=data.validated_data["effective_from"],
+                request=request,
+            )
+        except imports.CatalogImportError as exc:
+            return import_error(exc)
+        except CatalogError as exc:
+            return catalog_error(exc)
+        return Response(s.ImportPreviewSerializer(preview_data(applied)).data)

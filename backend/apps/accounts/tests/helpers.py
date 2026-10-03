@@ -1,5 +1,7 @@
 """Signed-in test clients and the token half of the cross-business harness."""
 
+from typing import Any
+
 from apps.accounts.models import User, UserSession
 from apps.accounts.services.auth import SignedIn, _start_session
 from apps.core.tenant_context import tenant_context
@@ -21,13 +23,16 @@ def client_for(business: Business, access: str | None = None) -> AppClient:
 
 
 def assert_cross_business_token_rejected(
-    *, user: User, other: Business, url: str, method: str = "get"
+    *, user: User, other: Business, url: str, method: str = "get", data: Any = None
 ) -> None:
-    """A real token from ``user``'s business gets 401 on another business's host."""
+    """A real token from ``user``'s business gets 401 on another business's host.
+
+    ``data`` is a request body that succeeds on the user's own business (JSON)."""
     signed_in = sign_in(user)
-    own = getattr(client_for(user.business, signed_in.access), method)(url)  # type: ignore[arg-type]
+    own_client = client_for(user.business, signed_in.access)  # type: ignore[arg-type]
+    own = getattr(own_client, method)(url, data=data, format="json")
     assert own.status_code < 400, f"The token doesn't work on its own business ({own.status_code})."
-    response = getattr(client_for(other, signed_in.access), method)(url)
+    response = getattr(client_for(other, signed_in.access), method)(url, data=data, format="json")
     assert response.status_code == 401, (
         f"A token from another business was accepted: {method.upper()} {url} -> "
         f"{response.status_code}"

@@ -31,6 +31,18 @@ class MoneyField(serializers.DecimalField):
         return value
 
 
+class QuantityField(MoneyField):
+    """A weight or count as text ("6.40", "2"): exact, never a float."""
+
+    default_error_messages = {
+        "not_text": _('Send quantities as text, like "6.40".'),
+    }
+
+    def __init__(self, **kwargs: Any) -> None:
+        kwargs.setdefault("max_digits", 7)
+        super().__init__(**kwargs)
+
+
 class PercentField(MoneyField):
     """A percentage as text ("16.00"), at most 2 decimal places."""
 

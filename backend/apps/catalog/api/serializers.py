@@ -6,7 +6,7 @@ from typing import Any
 from rest_framework import serializers
 
 from apps.catalog.models import PriceModifier, Service
-from apps.core.api.fields import MoneyField, PercentField
+from apps.core.api.fields import MoneyField, PercentField, QuantityField
 
 
 class CategorySerializer(serializers.Serializer[Any]):
@@ -115,3 +115,110 @@ class ModifierUpdateSerializer(serializers.Serializer[Any]):
         child=serializers.UUIDField(), required=False, max_length=500
     )
     is_active = serializers.BooleanField(required=False)
+
+
+class ImportPreviewRequestSerializer(serializers.Serializer[Any]):
+    csv = serializers.CharField(trim_whitespace=False)
+
+
+class ImportApplyRequestSerializer(serializers.Serializer[Any]):
+    csv = serializers.CharField(trim_whitespace=False)
+    # From the preview: proves the file and the price list are as previewed.
+    fingerprint = serializers.CharField(max_length=64, min_length=64)
+    effective_from = serializers.DateTimeField(required=False, allow_null=True, default=None)
+
+
+class ImportRowSerializer(serializers.Serializer[Any]):
+    line = serializers.IntegerField()
+    service = serializers.CharField()
+    category = serializers.CharField(allow_blank=True)
+    pricing_model = serializers.CharField(allow_blank=True)
+    unit = serializers.CharField(allow_blank=True)
+    price = serializers.CharField(allow_blank=True)
+    minimum = serializers.CharField(allow_blank=True)
+    status = serializers.ChoiceField(choices=["new", "changed", "unchanged", "invalid"])
+    problem = serializers.CharField(allow_blank=True)
+    message = serializers.CharField(allow_blank=True)
+    old_price = serializers.CharField(allow_null=True)
+    old_minimum = serializers.CharField(allow_null=True)
+    new_category = serializers.BooleanField()
+
+
+class ImportCountsSerializer(serializers.Serializer[Any]):
+    new = serializers.IntegerField()
+    changed = serializers.IntegerField()
+    unchanged = serializers.IntegerField()
+    invalid = serializers.IntegerField()
+
+
+class ImportPreviewSerializer(serializers.Serializer[Any]):
+    rows = ImportRowSerializer(many=True)
+    counts = ImportCountsSerializer()
+    fingerprint = serializers.CharField()
+
+
+# --- Quotes (T08) ----------------------------------------------------------------------------
+
+
+class QuoteLineRequestSerializer(serializers.Serializer[Any]):
+    service_id = serializers.UUIDField()
+    # kg for per kg (up to 2 decimals), a whole count for per item, 1 for flat.
+    quantity = QuantityField()
+
+
+class QuoteDiscountRequestSerializer(serializers.Serializer[Any]):
+    # Exactly one of percent and amount, with a reason (design doc "Discounts").
+    percent = PercentField(required=False, allow_null=True, default=None)
+    amount = MoneyField(required=False, allow_null=True, default=None)
+    reason = serializers.CharField(max_length=200, allow_blank=True)
+
+
+class QuoteRequestSerializer(serializers.Serializer[Any]):
+    lines = QuoteLineRequestSerializer(many=True, allow_empty=False, max_length=100)
+    branch_id = serializers.UUIDField(required=False, allow_null=True, default=None)
+    modifier_ids = serializers.ListField(
+        child=serializers.UUIDField(), required=False, default=list, max_length=20
+    )
+    discount = QuoteDiscountRequestSerializer(required=False, allow_null=True, default=None)
+
+
+class QuoteLineSerializer(serializers.Serializer[Any]):
+    service_id = serializers.UUIDField()
+    price_id = serializers.UUIDField()
+    name_en = serializers.CharField()
+    name_sw = serializers.CharField()
+    pricing_model = serializers.CharField()
+    unit = serializers.CharField()
+    quantity = QuantityField()
+    unit_price = MoneyField()
+    base = MoneyField()
+    minimum_applied = serializers.BooleanField()
+    modifier_percent = PercentField()
+    modifier_ids = serializers.ListField(child=serializers.UUIDField())
+    modifier_amount = MoneyField()
+    amount = MoneyField()
+
+
+class QuoteFlatModifierSerializer(serializers.Serializer[Any]):
+    modifier_id = serializers.UUIDField()
+    amount = MoneyField()
+
+
+class QuoteSerializer(serializers.Serializer[Any]):
+    currency = serializers.CharField()
+    lines = QuoteLineSerializer(many=True)
+    subtotal = MoneyField()
+    flat_modifiers = QuoteFlatModifierSerializer(many=True)
+    laundry_total = MoneyField()
+    discount = MoneyField()
+    delivery_fee = MoneyField()
+    taxable = MoneyField()
+    vat_registered = serializers.BooleanField()
+    vat_rate = PercentField()
+    vat_included = serializers.BooleanField()
+    vat = MoneyField()
+    total_unrounded = MoneyField()
+    rounding = MoneyField()
+    # Whole shillings: what the customer pays.
+    total = MoneyField(decimal_places=0)
+    modifiers_not_applied = serializers.ListField(child=serializers.UUIDField())
