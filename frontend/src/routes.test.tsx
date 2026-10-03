@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { createMemoryRouter, RouterProvider } from "react-router";
+import { createMemoryRouter } from "react-router";
+import { RouterProvider } from "react-router/dom";
 
 import { createQueryClient } from "@/api/query";
 import { routes } from "@/routes";
@@ -13,7 +14,11 @@ function renderAt(path: string) {
     if (pathOf(request) === "/api/v1/app/version") {
       return json({ app: "x", platform: "web", minimum: "0.0.0", latest: "0.0.0" });
     }
-    return json(envelope("session_expired", "x"), 401);
+    if (pathOf(request) === "/api/v1/auth/refresh") {
+      return json(envelope("session_expired", "x"), 401);
+    }
+    // Not a registered counter device (GET /devices/current), and anything else.
+    return json(envelope("not_found", "x"), 404);
   });
   const router = createMemoryRouter(routes, { initialEntries: [path] });
   render(

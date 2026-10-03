@@ -31,7 +31,8 @@ export interface X12EnterCodeProps {
   notice?: string;
   onVerify: (code: string) => Promise<unknown>;
   onResend: () => Promise<unknown>;
-  onChangeNumber: () => void;
+  /** Absent when the number can't change (an invitation is for one number). */
+  onChangeNumber?: () => void;
 }
 
 export function X12EnterCode({
@@ -142,9 +143,11 @@ export function X12EnterCode({
             pending={resend.isPending}
             onResend={() => resend.mutate()}
           />
-          <Button variant="text" onClick={onChangeNumber}>
-            {t("X-12.change_number")}
-          </Button>
+          {onChangeNumber && (
+            <Button variant="text" onClick={onChangeNumber}>
+              {t("X-12.change_number")}
+            </Button>
+          )}
         </div>
         <Button
           fullWidth

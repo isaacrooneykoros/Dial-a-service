@@ -140,3 +140,10 @@ Pinned exactly in `frontend/package.json` and `package-lock.json`.
 - The platform admin is Django admin on its own host (`admin.dialaservice.co.ke`) and is not part of this build.
 - **Order of checks:** X-02 (update required) comes before X-03 (maintenance), and both come before the app opens. An address no business uses shows X-04, with no home button.
 - **Cached config:** stored in `localStorage` under the business's own subdomain, so it never crosses businesses. It's used when the config request fails for any reason other than 404.
+
+## Invitations, devices and switching as built (T09f, 2026-10-03)
+
+- `/invite/:token` is its own lazy area. It checks the staff app's version (shop people only in M1; riders join in M9) and doesn't restore a session. After X-13, accountants go to `/console`; owners, managers and staff go through the PIN step to `/staff`.
+- The staff area first asks `GET /devices/current`. On a registered device, signed-out visitors land on X-15 (`/staff/switch`) instead of X-10, and signed-in screens lock after 5 idle minutes.
+- **Ending a session when switching:** "Switch user", the idle lock and S-02 navigate to X-15, carrying how to end the session (`logout`, or `forget` after S-02, whose server call has already ended it). X-15 ends it once it's on screen. Clearing the token first would let the signed-in screen redirect to X-15 with a `returnTo` meant for the person leaving.
+- **The bundle budget** counts the entry chunk, the area chunk and their static imports, read from Vite's build manifest. At T09f the staff app is 179 KB of 200: about 125 KB is the base (React, the router, TanStack Query, i18n) and about 42 KB the forms chunk (zod, react-hook-form, sign-in). If M2's counter screens push it over, the first step is `zod/mini` from the same package.

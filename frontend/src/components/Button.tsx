@@ -2,7 +2,7 @@
 // While `loading`, it shows a spinner inside, is disabled and tells screen readers
 // it's busy ("Submitting" shared state).
 import { LoaderCircle } from "lucide-react";
-import type { ButtonHTMLAttributes } from "react";
+import type { ButtonHTMLAttributes, Ref } from "react";
 import { useTranslation } from "react-i18next";
 
 export type ButtonVariant = "primary" | "secondary" | "text" | "danger";
@@ -18,6 +18,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   loading?: boolean;
   fullWidth?: boolean;
+  ref?: Ref<HTMLButtonElement>;
 }
 
 export function Button({

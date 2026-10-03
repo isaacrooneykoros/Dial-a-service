@@ -11,7 +11,17 @@ import { X10Login } from "@/apps/shared/signin/X10Login";
 import { X11ForgotPassword } from "@/apps/shared/signin/X11ForgotPassword";
 import type { AppId } from "@/lib/apps";
 
-export function SignInRoutes({ app, signedIn }: { app: AppId; signedIn: ReactNode }) {
+export interface SignInRoutesProps {
+  app: AppId;
+  /** The signed-in part of the area. */
+  signedIn: ReactNode;
+  /** Where signed-out visitors go instead of X-10 (X-15 on a registered device). */
+  signedOutPath?: string;
+  /** More routes outside the sign-in guard, such as X-15. */
+  extraRoutes?: ReactNode;
+}
+
+export function SignInRoutes({ app, signedIn, signedOutPath, extraRoutes }: SignInRoutesProps) {
   const signedOut = (screen: ReactNode) => <SignedOutOnly app={app}>{screen}</SignedOutOnly>;
   return (
     <Routes>
@@ -22,7 +32,15 @@ export function SignInRoutes({ app, signedIn }: { app: AppId; signedIn: ReactNod
         path="forgot-password/new-password"
         element={signedOut(<X13ResetPassword app={app} />)}
       />
-      <Route path="*" element={<RequireSignIn app={app}>{signedIn}</RequireSignIn>} />
+      {extraRoutes}
+      <Route
+        path="*"
+        element={
+          <RequireSignIn app={app} signedOutPath={signedOutPath}>
+            {signedIn}
+          </RequireSignIn>
+        }
+      />
     </Routes>
   );
 }

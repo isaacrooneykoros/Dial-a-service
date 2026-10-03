@@ -5,13 +5,25 @@ import { Navigate, useLocation } from "react-router";
 import { homePathFor, loginPathForApp, type AppId } from "@/lib/apps";
 import { getAccessToken, useAccessToken } from "@/lib/auth";
 
-/** Signed-out visitors go to X-10 and come back here afterwards. */
-export function RequireSignIn({ app, children }: { app: AppId; children: ReactNode }) {
+/**
+ * Signed-out visitors go to X-10 (or, on a registered counter device, X-15) and come
+ * back here afterwards.
+ */
+export function RequireSignIn({
+  app,
+  signedOutPath,
+  children,
+}: {
+  app: AppId;
+  signedOutPath?: string;
+  children: ReactNode;
+}) {
   const token = useAccessToken();
   const location = useLocation();
   if (!token) {
     const returnTo = encodeURIComponent(location.pathname + location.search);
-    return <Navigate to={`${loginPathForApp(app)}?returnTo=${returnTo}`} replace />;
+    const to = signedOutPath ?? loginPathForApp(app);
+    return <Navigate to={`${to}?returnTo=${returnTo}`} replace />;
   }
   return children;
 }

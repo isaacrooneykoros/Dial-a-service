@@ -26,6 +26,8 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
+      // dist/.vite/manifest.json: each chunk's static imports, for scripts/check-bundle.mjs.
+      manifest: true,
       rollupOptions: {
         output: {
           // Readable chunk names, used by scripts/check-bundle.mjs.

@@ -62,7 +62,9 @@
     "show_password": "Show password",
     "hide_password": "Hide password",
     "phone_invalid": "Enter a Kenyan mobile number, like 0712 345 678.",
-    "code_digit": "Digit {{n}} of {{total}}"
+    "code_digit": "Digit {{n}} of {{total}}",
+    "pin_progress": "{{label}}: {{count}} of {{total}} digits entered",
+    "delete_digit": "Delete the last digit"
   },
   "X-10": {
     "title": "Log in",
@@ -110,6 +112,89 @@
     "mismatch": "The passwords don't match.",
     "button": {
       "save": "Save"
+    }
+  },
+  "home": {
+    "signed_in_as": "Signed in as {{name}}",
+    "log_out": "Log out"
+  },
+  "roles": {
+    "owner": "Shop owner",
+    "manager": "Shop manager",
+    "accountant": "Accountant",
+    "staff": "Shop staff",
+    "rider": "Rider"
+  },
+  "rights": {
+    "accept_cash": "Accept cash",
+    "give_discounts": "Give discounts",
+    "correct_prices": "Correct prices"
+  },
+  "X-14": {
+    "title": "{{business}} invited you to join as {{role}}",
+    "code_hint": "We'll send a code to this number to check it's you.",
+    "expired_hint": "Invitations last 7 days. Once you have a new one, open the link in the new SMS.",
+    "pin": {
+      "title": "Choose your PIN",
+      "confirm_title": "Enter your PIN again",
+      "intro": "You'll use these 4 digits to switch to your account on the shop's counter devices.",
+      "mismatch": "The PINs don't match. Choose your PIN again."
+    }
+  },
+  "X-15": {
+    "title": "Who's using this device?",
+    "enter_pin": "Hi {{name}}, enter your PIN",
+    "device": "{{device}} · {{branch}}",
+    "attempts_left_one": "{{count}} try left before this device locks.",
+    "attempts_left_other": "{{count}} tries left before this device locks.",
+    "locked": "This device is locked. Ask a manager to sign in on it to unlock it.",
+    "empty": "No one at this branch has a PIN yet. Log in with your password instead.",
+    "choose_someone_else": "Choose someone else",
+    "log_in_with_password": "Log in with password",
+    "button": {
+      "switch_user": "Switch user"
+    }
+  },
+  "S-02": {
+    "title": "Register this device",
+    "explainer": "Registering signs you out of this device. After that, people at this branch switch in with their PINs.",
+    "name": "Device name",
+    "name_hint": "For example, Front counter tablet",
+    "name_required": "Give the device a name.",
+    "branch": "Branch",
+    "branch_required": "Choose a branch.",
+    "no_branches": "You aren't part of any branch yet, so you can't register a device.",
+    "button": {
+      "register": "Register"
+    }
+  },
+  "A-41": {
+    "title": "Team",
+    "invite_title": "Invite a person",
+    "first_name": "First name",
+    "last_name": "Surname",
+    "first_name_required": "Enter their first name.",
+    "last_name_required": "Enter their surname.",
+    "role": "Role",
+    "role_required": "Choose a role.",
+    "branches": "Branches",
+    "rights": "What they can do",
+    "button": {
+      "send": "Send invitation",
+      "resend": "Resend",
+      "cancel": "Cancel"
+    },
+    "sent": "Invitation sent to {{phone}}.",
+    "resent": "Invitation sent again.",
+    "pending_title": "Pending invitations",
+    "pending_empty": "No pending invitations.",
+    "show_more": "Show more",
+    "expires": "Link works until {{date}}",
+    "cancel_confirm": {
+      "title": "Cancel the invitation for {{name}}?",
+      "body": "The link in their SMS will stop working.",
+      "confirm": "Cancel invitation",
+      "keep": "Keep it"
     }
   }
 }

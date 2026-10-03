@@ -1,12 +1,47 @@
 // Shared sign-in plumbing: finishing a sign-in, and the forgot-password journey's state.
-import type { QueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router";
 
+import { api, unwrap } from "@/api/client";
 import type { components } from "@/api/schema";
+import { loginPathForApp, type AppId } from "@/lib/apps";
 import { setAccessToken } from "@/lib/auth";
 
 export type Me = components["schemas"]["Me"];
 
 export const meQueryKey = ["me"] as const;
+
+/** Roles that use the counter devices and so have a PIN (apps/accounts/services/pins.py). */
+export const PIN_ROLES: readonly string[] = ["owner", "manager", "staff"];
+
+/** Roles that manage the team and devices (the API's IsOwnerOrManager). */
+export const MANAGING_ROLES: readonly string[] = ["owner", "manager"];
+
+/** The signed-in person (primed at sign-in, fetched after a reload). */
+export function useMe() {
+  return useQuery({ queryKey: meQueryKey, queryFn: () => unwrap(api.GET("/api/v1/me")) });
+}
+
+/** End the session on the server, forget everything about it here, and go to X-10. */
+export function useLogout(app: AppId) {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  return async () => {
+    await endSession(queryClient);
+    void navigate(loginPathForApp(app), { replace: true });
+  };
+}
+
+/** Log out on the server (best effort: offline still signs out here) and clear local state. */
+export async function endSession(queryClient: QueryClient): Promise<void> {
+  try {
+    await api.POST("/api/v1/auth/logout");
+  } catch {
+    // Offline: the access token is dropped anyway and expires within 15 minutes.
+  }
+  setAccessToken(null);
+  queryClient.removeQueries({ queryKey: meQueryKey });
+}
 
 /** Keep the access token (in memory) and the signed-in person after a sign-in. */
 export function completeSignIn(queryClient: QueryClient, body: { access: string; user: Me }) {

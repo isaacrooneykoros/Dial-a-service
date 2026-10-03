@@ -2,6 +2,7 @@
 // tablet never downloads console code. Every area starts with X-01 for its app:
 // the staff, rider and customer apps and the business console each check their own
 // minimum version. Public order pages belong to the customer app but need no session.
+// /invite/:token (X-14) is shared by the shop apps.
 import { lazy, Suspense, type ComponentType, type LazyExoticComponent } from "react";
 import type { RouteObject } from "react-router";
 
@@ -13,6 +14,7 @@ const ConsoleArea = lazy(() => import("@/apps/console/ConsoleArea"));
 const RiderArea = lazy(() => import("@/apps/rider/RiderArea"));
 const CustomerArea = lazy(() => import("@/apps/customer/CustomerArea"));
 const PublicArea = lazy(() => import("@/apps/public/PublicArea"));
+const InviteArea = lazy(() => import("@/apps/invite/InviteArea"));
 
 function area(
   Component: LazyExoticComponent<ComponentType>,
@@ -34,5 +36,7 @@ export const routes: RouteObject[] = [
   { path: "/console/*", element: area(ConsoleArea, "console") },
   { path: "/rider/*", element: area(RiderArea, "rider") },
   { path: "/o/:token", element: area(PublicArea, "customer", { restoreSession: false }) },
+  // X-14 is for shop people in M1 (riders join in M9), so it checks the staff app's version.
+  { path: "/invite/*", element: area(InviteArea, "staff", { restoreSession: false }) },
   { path: "/*", element: area(CustomerArea, "customer") },
 ];

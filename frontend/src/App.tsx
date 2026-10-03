@@ -1,5 +1,7 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { createBrowserRouter, RouterProvider } from "react-router";
+import { createBrowserRouter } from "react-router";
+// The DOM RouterProvider wires up react-dom's flushSync (used when locking a device).
+import { RouterProvider } from "react-router/dom";
 
 import { createQueryClient } from "@/api/query";
 import { setSessionExpiredNavigator } from "@/lib/auth";
