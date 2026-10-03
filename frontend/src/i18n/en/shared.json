@@ -13,5 +13,25 @@
     "minutes_ago_one": "{{count}} min ago",
     "minutes_ago_other": "{{count}} min ago",
     "just_now": "Just now"
+  },
+  "state": {
+    "loading": "Loading",
+    "refreshing": "Updating",
+    "submitting": "Please wait"
+  },
+  "error": {
+    "server": "Something went wrong on our side. Please try again.",
+    "network": "We couldn't connect. Check your internet connection and try again.",
+    "retry": "Retry",
+    "reference": "Reference: {{reference}}"
+  },
+  "offline": {
+    "banner": "You're offline. You can still look around, but changes need a connection."
+  },
+  "throttled": {
+    "minutes_one": "Too many attempts. Try again in {{count}} minute.",
+    "minutes_other": "Too many attempts. Try again in {{count}} minutes.",
+    "seconds_one": "Too many attempts. Try again in {{count}} second.",
+    "seconds_other": "Too many attempts. Try again in {{count}} seconds."
   }
 }
