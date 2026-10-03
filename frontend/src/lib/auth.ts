@@ -4,6 +4,8 @@
 // sessionStorage, where any injected script could read it. The refresh token is an
 // httpOnly cookie on /api/v1/auth, so JavaScript never sees it; a page reload gets a
 // new access token through a silent refresh (X-01).
+import { useSyncExternalStore } from "react";
+
 import { ApiError } from "@/api/errors";
 import { appForPath, loginPathForApp } from "@/lib/apps";
 
@@ -26,6 +28,11 @@ export function setAccessToken(token: string | null): void {
 export function subscribeAccessToken(listener: () => void): () => void {
   listeners.add(listener);
   return () => listeners.delete(listener);
+}
+
+/** The current access token, re-rendering on sign-in and sign-out. */
+export function useAccessToken(): string | null {
+  return useSyncExternalStore(subscribeAccessToken, getAccessToken, () => null);
 }
 
 // --- Single-flight refresh ----------------------------------------------------------

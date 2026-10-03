@@ -57,5 +57,59 @@
     "button": {
       "home": "Back to home"
     }
+  },
+  "field": {
+    "show_password": "Show password",
+    "hide_password": "Hide password",
+    "phone_invalid": "Enter a Kenyan mobile number, like 0712 345 678.",
+    "code_digit": "Digit {{n}} of {{total}}"
+  },
+  "X-10": {
+    "title": "Log in",
+    "phone": "Phone number",
+    "password": "Password",
+    "forgot_password": "Forgot password?",
+    "button": {
+      "log_in": "Log in"
+    }
+  },
+  "X-11": {
+    "title": "Forgot password",
+    "intro": "Enter your phone number and we'll send you a code to set a new password.",
+    "button": {
+      "send_code": "Send code"
+    }
+  },
+  "X-12": {
+    "title": "Enter code",
+    "sent_to": "Enter the 6-digit code sent to {{phone}}",
+    "code_label": "6-digit code",
+    "attempts_left_one": "{{count}} attempt left",
+    "attempts_left_other": "{{count}} attempts left",
+    "resend": "Resend code",
+    "resend_in": "Resend code in {{seconds}}s",
+    "new_code_sent": "We've sent a new code.",
+    "change_number": "Wrong number? Change it",
+    "button": {
+      "continue": "Continue"
+    }
+  },
+  "X-13": {
+    "title": "Set new password",
+    "new_password": "New password",
+    "confirm_password": "Confirm password",
+    "rules": "Your password needs",
+    "rule": {
+      "length": "At least 8 characters",
+      "not_numeric": "Not only numbers",
+      "not_common": "Not a common password",
+      "checked_on_save": "Checked when you save"
+    },
+    "rule_met": "Done",
+    "rule_unmet": "Not yet",
+    "mismatch": "The passwords don't match.",
+    "button": {
+      "save": "Save"
+    }
   }
 }

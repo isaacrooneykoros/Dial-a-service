@@ -72,6 +72,39 @@ export function OfflineBanner() {
 }
 
 /**
+ * The right feedback for a failed action: the throttle countdown, the server error
+ * banner (with Retry), or the server's message. Field errors show under their fields,
+ * so a validation error shows only what belongs to no field.
+ */
+export function ActionError({
+  error,
+  onRetry,
+  onThrottleDone,
+}: {
+  error: ApiError | null;
+  onRetry?: () => void;
+  onThrottleDone?: () => void;
+}) {
+  if (!error) return null;
+  if (error.code === "throttled" && error.retryAfter) {
+    return (
+      <Throttled
+        key={error.requestId ?? error.retryAfter}
+        retryAfter={error.retryAfter}
+        onDone={onThrottleDone}
+      />
+    );
+  }
+  if (error.isNetwork || error.isServer)
+    return <ServerErrorBanner error={error} onRetry={onRetry} />;
+  if (error.code === "validation_error") {
+    const general = error.fields.non_field_errors;
+    return general?.length ? <Banner tone="error">{general.join(" ")}</Banner> : null;
+  }
+  return <Banner tone="error">{error.message}</Banner>;
+}
+
+/**
  * Too many attempts: "Too many attempts. Try again in N minutes." counting down from the
  * server's retry_after. `onDone` runs when the wait is over. Remount (new `key`) to restart.
  */

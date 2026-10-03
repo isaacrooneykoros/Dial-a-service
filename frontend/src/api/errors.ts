@@ -12,6 +12,8 @@ export class ApiError extends Error {
   readonly requestId: string | null;
   /** Seconds until a throttled action can be tried again (429 only). */
   readonly retryAfter: number | null;
+  /** Tries left on a code (X-12), when the server says. */
+  readonly attemptsLeft: number | null;
 
   constructor(init: {
     status: number;
@@ -20,6 +22,7 @@ export class ApiError extends Error {
     fields?: FieldErrors;
     requestId?: string | null;
     retryAfter?: number | null;
+    attemptsLeft?: number | null;
   }) {
     super(init.message);
     this.name = "ApiError";
@@ -28,6 +31,7 @@ export class ApiError extends Error {
     this.fields = init.fields ?? {};
     this.requestId = init.requestId ?? null;
     this.retryAfter = init.retryAfter ?? null;
+    this.attemptsLeft = init.attemptsLeft ?? null;
   }
 
   /** No response at all: offline, DNS, connection reset. Safe to retry. */
@@ -62,6 +66,7 @@ export class ApiError extends Error {
       fields: cleanFields(body.fields),
       requestId: typeof body.request_id === "string" ? body.request_id : headerId,
       retryAfter: typeof body.retry_after === "number" ? body.retry_after : null,
+      attemptsLeft: typeof body.attempts_left === "number" ? body.attempts_left : null,
     });
   }
 
@@ -82,6 +87,7 @@ interface Envelope {
   fields?: unknown;
   request_id?: unknown;
   retry_after?: unknown;
+  attempts_left?: unknown;
 }
 
 function isEnvelope(body: unknown): body is Envelope {
@@ -104,4 +110,14 @@ function cleanFields(fields: unknown): FieldErrors {
 /** The support reference shown on the server error banner: the request ID, shortened. */
 export function shortReference(requestId: string | null): string | null {
   return requestId ? requestId.slice(0, 8).toUpperCase() : null;
+}
+
+/** Whatever a mutation threw, as an ApiError (a bug in our code reads as a server error). */
+export function asApiError(error: unknown): ApiError {
+  if (error instanceof ApiError) return error;
+  return new ApiError({
+    status: 0,
+    code: "unexpected_response",
+    message: i18n.t("shared:error.server"),
+  });
 }

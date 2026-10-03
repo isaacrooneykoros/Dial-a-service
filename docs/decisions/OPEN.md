@@ -53,6 +53,7 @@ When a decision is made, move it to "Decided" with the date and who decided, and
 | D-45 | Staff profile photos for X-15 (no field or upload screen); M1 shows initials | M3 | Open |
 | D-46 | QR code on S-44 likely needs a frontend dependency outside `CLAUDE.md` §4 | M3 | Open |
 | D-50 | `BranchMember.role`: the data model lists a role per branch membership, but nothing says how it differs from the person's own role (`User.role`). M1 leaves it out; adding it later is additive | M5 | Open |
+| D-51 | X-12 automatic code fill on Android (WebOTP) only works if the code SMS ends with a line like `@mamasafi.dialaservice.co.ke #123456`. The catalogue text is used word for word, so that line isn't added. X-12 is ready for it and offers the code through the keyboard (`autocomplete=one-time-code`) meanwhile | M1 (T09e) | Open |
 
 ## Decided
 
