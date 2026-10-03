@@ -37,7 +37,10 @@ CREDENTIAL_KEYS = ("USER", "PASSWORD", "HOST", "PORT", "OPTIONS")
 def _credentials(url: str) -> dict[str, Any]:
     config = environ.Env.db_url_config(url)
     config["HOST"] = direct_host(config["HOST"])
-    return {key: config.get(key, "") for key in CREDENTIAL_KEYS}
+    credentials = {key: config.get(key, "") for key in CREDENTIAL_KEYS}
+    # A URL without a query (CI's local Postgres) has no OPTIONS; Neon's has sslmode.
+    credentials["OPTIONS"] = config.get("OPTIONS") or {}
+    return credentials
 
 
 def _use(credentials: dict[str, Any]) -> None:
